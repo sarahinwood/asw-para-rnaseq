@@ -24,27 +24,33 @@ full_sample_key = pandas.read_csv(full_sample_key_file)
 
 all_samples = sorted(set(full_sample_key['Sample_name']))
 
+#########
+# RULES #
+#########
+
 rule target:
     input:
-        expand('output/salmon/{sample}_quant/quant.sf',
+        expand('output/salmon/asw/{sample}_quant/quant.sf',
+            sample=all_samples),
+        expand('output/salmon/mh/{sample}_quant/quant.sf',
             sample=all_samples)
 
-rule salmon_quant:
+rule asw_salmon_quant:
     input:
-        index_output = 'output/salmon/transcripts_index/hash.bin',
+        index_output = 'output/salmon/asw/transcripts_index/hash.bin',
         left = 'data/bbduk_trim/{sample}_r1.fq.gz',
         right = 'data/bbduk_trim/{sample}_r2.fq.gz'
     output:
-        'output/salmon/{sample}_quant/quant.sf'
+        'output/salmon/asw/{sample}_quant/quant.sf'
     params:
-        index_outdir = 'output/salmon/transcripts_index',
-        outdir = 'output/salmon/{sample}_quant'
+        index_outdir = 'output/salmon/asw/transcripts_index',
+        outdir = 'output/salmon/asw/{sample}_quant'
     threads:
         20
     singularity:
         salmon_container
     log:
-        'output/logs/salmon_quant_{sample}.log'
+        'output/logs/asw_salmon_quant_{sample}.log'
     shell:
         'salmon quant '
         '-i {params.index_outdir} '
@@ -55,19 +61,19 @@ rule salmon_quant:
         '-p {threads} '
         '&> {log}'
 
-rule salmon_index:
+rule asw_salmon_index:
     input:
-        transcriptome_length_filtered = 'data/isoforms_by_length.fasta'
+        transcriptome_length_filtered = 'data/sorted_fasta/asw_isoforms_by_length.fasta'
     output:
-        'output/salmon/transcripts_index/hash.bin'
+        'output/salmon/asw/transcripts_index/hash.bin'
     params:
-        outdir = 'output/salmon/transcripts_index'
+        outdir = 'output/salmon/asw/transcripts_index'
     threads:
         20
     singularity:
         salmon_container
     log:
-        'output/logs/salmon_index.log'
+        'output/logs/asw_salmon_index.log'
     shell:
         'salmon index '
         '-t {input.transcriptome_length_filtered} '
@@ -75,9 +81,51 @@ rule salmon_index:
         '-p {threads} '
         '&> {log}'
 
+rule mh_salmon_quant:
+    input:
+        index_output = 'output/salmon/mh/transcripts_index/hash.bin',
+        left = 'data/bbduk_trim/{sample}_r1.fq.gz',
+        right = 'data/bbduk_trim/{sample}_r2.fq.gz'
+    output:
+        'output/salmon/mh/{sample}_quant/quant.sf'
+    params:
+        index_outdir = 'output/salmon/mh/transcripts_index',
+        outdir = 'output/salmon/mh/{sample}_quant'
+    threads:
+        20
+    singularity:
+        salmon_container
+    log:
+        'output/logs/mh_salmon_quant_{sample}.log'
+    shell:
+        'salmon quant '
+        '-i {params.index_outdir} '
+        '-l ISR '
+        '-1 {input.left} '
+        '-2 {input.right} '
+        '-o {params.outdir} '
+        '-p {threads} '
+        '&> {log}'
 
-
-
+rule mh_salmon_index:
+    input:
+        transcriptome_length_filtered = 'data/sorted_fasta/mh_isoforms_by_length.fasta'
+    output:
+        'output/salmon/mh/transcripts_index/hash.bin'
+    params:
+        outdir = 'output/salmon/mh/transcripts_index'
+    threads:
+        20
+    singularity:
+        salmon_container
+    log:
+        'output/logs/mh_salmon_index.log'
+    shell:
+        'salmon index '
+        '-t {input.transcriptome_length_filtered} '
+        '-i {params.outdir} '
+        '-p {threads} '
+        '&> {log}'
 
 
 
