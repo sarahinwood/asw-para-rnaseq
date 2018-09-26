@@ -7,7 +7,7 @@ gene2tx <- fread("data/asw_Trinity.fasta.gene_trans_map", header = FALSE)
 tx2gene <- data.frame(gene2tx[, .(V2, V1)])
 
   ##Find all salmon quant files
-quant_files <- list.files(path="output/asw", pattern = "quant.sf", full.names=TRUE, recursive = TRUE)
+quant_files <- list.files(path="output/salmon/asw", pattern = "quant.sf", full.names=TRUE, recursive = TRUE)
   ##assign names to quant files from folder name
 names(quant_files) <- gsub(".*/(.+)_quant/.*", "\\1", quant_files)
   ##import the salmon quant files (tx2gene links transcript ID to Gene ID - required for gene-level summarisation... 
