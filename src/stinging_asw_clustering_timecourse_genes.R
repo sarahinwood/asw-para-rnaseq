@@ -8,11 +8,11 @@ gm_mean <- function(x, na.rm=TRUE){
 }
 
   ##read in dds saved in previous script
-dds <- readRDS("output/deseq2/asw_timecourse/dds.rds")
+dds <- readRDS("output/asw_timecourse/deseq2/dds.rds")
   ##filter for only abdo samples
 dds_abdo <- dds[,dds$Tissue == "Abdomen"]
   ##read in list of sig gene names
-sig_gene_names <- fread("output/deseq2/asw_timecourse/timecourse_sig_gene_names.csv")
+sig_gene_names <- fread("output/asw_timecourse/deseq2/timecourse_sig_gene_names.csv")
 
   ##vst log transform data - absolute counts now changed so cannot compare between genes (only between samples for 1 gene)
 vst <- varianceStabilizingTransformation(dds_abdo, blind = FALSE)

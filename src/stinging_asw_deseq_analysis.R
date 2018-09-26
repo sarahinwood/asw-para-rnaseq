@@ -20,7 +20,7 @@ setkey(sample_data, Sample_name)
   ##Create dds object and link to sample data
 dds <- DESeqDataSetFromTximport(txi, colData = sample_data[colnames(txi$counts)], design = ~1)
   ##save dds as a file for import in clustering timecourse genes script
-saveRDS(dds, file = "output/deseq2/asw_timecourse/dds.rds")
+saveRDS(dds, file = "output/asw_timecourse/deseq2/dds.rds")
 
   ##Select only abdomen samples
 dds_abdo <- dds[,dds$Tissue == "Abdomen"]
@@ -41,7 +41,7 @@ sig_genes <- subset(dds_abdo_res, padj < 0.05)
   ##make list of sig gene names
 sig_gene_names <- row.names(sig_genes)
   ##save list of sig gene names
-fwrite(data.table(sig_gene_names), "output/deseq2/asw_timecourse/timecourse_sig_gene_names.csv")
+fwrite(data.table(sig_gene_names), "output/asw_timecourse/deseq2/timecourse_sig_gene_names.csv")
 
 ##plot counts for genes of interest, sub in name
 plotCounts(dds_abdo, "TRINITY_DN13642_c0_g1", intgroup = c("Treatment", "Wasp_Location"))
