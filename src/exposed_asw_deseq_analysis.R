@@ -55,7 +55,7 @@ sig_w_annots <- merge (ordered_sig_res_group_table, trinotate_report, by.x="#gen
 fwrite(sig_w_annots, "output/exposed/deseq2/sig_genes_with_annots.csv")
 
   ##read back in dedeup sig genes w/annots
-dedup_sig_w_annots <- fread("output/deseq2/exposed/dedup_sig_genes_with_annots.csv")
+dedup_sig_w_annots <- fread("output/exposed/deseq2/dedup_sig_genes_with_annots.csv")
   ##sum of DEGs with no blastX annotation in transcriptome
 sum(dedup_sig_w_annots$sprot_Top_BLASTX_hit==".")
   ##list of DEGs with no blastX annotation
