@@ -1,4 +1,3 @@
-library("Mfuzz")
 library("DESeq2")
 library("data.table")
 
