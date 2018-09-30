@@ -32,12 +32,12 @@ design(dds_abdo) <- ~Wasp_Location+Treatment
   ##run deseq, must specify reduced model for LRT test
 dds_abdo <- DESeq(dds_abdo, test = "LRT", reduced = ~Wasp_Location)
   ##filter results on alpha
-dds_abdo_res <- results(dds_abdo, alpha = 0.05)
+dds_abdo_res <- results(dds_abdo, alpha = 0.1)
  ##order based off padj
 ordered_dds_abdo_res <- dds_abdo_res[order(dds_abdo_res$padj),]
 
   ##make list of sig genes
-sig_genes <- subset(dds_abdo_res, padj < 0.05)
+sig_genes <- subset(dds_abdo_res, padj < 0.1)
   ##make list of sig gene names
 sig_gene_names <- row.names(sig_genes)
   ##save list of sig gene names

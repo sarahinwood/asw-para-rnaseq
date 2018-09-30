@@ -1,6 +1,8 @@
 library("DESeq2")
 library("data.table")
 
+seed <- 6
+
   ##function to calculate geometric mean
 gm_mean <- function(x, na.rm=TRUE){
   exp(sum(log(x[x > 0]), na.rm = na.rm) / length(x))
@@ -11,7 +13,7 @@ dds <- readRDS("output/asw_timecourse/deseq2/dds.rds")
   ##filter for only abdo samples
 dds_abdo <- dds[,dds$Tissue == "Abdomen"]
   ##read in list of sig gene names
-sig_gene_names <- fread("output/asw_timecourse/deseq2/timecourse_sig_gene_names.csv")
+sig_gene_names <- fread("output/asw_timecourse/deseq2/timecourse_sig_gene_names.csv")[,unique(sig_gene_names)]
 
   ##vst log transform data - absolute counts now changed so cannot compare between genes (only between samples for 1 gene)
 vst <- varianceStabilizingTransformation(dds_abdo, blind = FALSE)
@@ -33,6 +35,48 @@ expression_matrix <- as.matrix(data.frame(mean_vst_wide, row.names = "rn"))
 
   ##linking treatment labels to treatments
 pheno_data <- data.frame(row.names = colnames(expression_matrix), treatment = colnames(expression_matrix))
+vg <- ExpressionSet(assayData = expression_matrix[sig_gene_names,], phenoData = new('AnnotatedDataFrame', data = pheno_data))
 
+##run this bit on biochemcompute
+vg_s <- standardise(vg)
+#optimise parameters
+m <- 2.3
+x <- Dmin(vg_s, m, crange = seq(4, 16, 2), repeats = 1)
 
+set.seed(seed)
+c1 <- mfuzz(vg_s, c = 5, m=m)
+clusters<- acore(vg_s, c1, min.acore = 0.7)
 
+mfuzz.plot(vg_s, c1, mfrow = c(3, 2), min.mem = 0.7)
+
+cluster_membership <- rbindlist(clusters, idcol = "cluster")
+
+cluster_expr_wide <- data.table(exprs(vg_s), keep.rownames = TRUE)
+setnames(cluster_expr_wide, "rn", "NAME")
+cluster_expr <- melt(cluster_expr_wide,
+                     id.vars = "NAME",
+                     variable.name = "time",
+                     value.name = "scaled_vst")
+
+cluster_pd <- merge(cluster_membership,
+                    cluster_expr,
+                    by = "NAME",
+                    all.x = TRUE,
+                    all.y = FALSE)
+
+time_order <- c("Control", "m30", "m120", "m240")
+cluster_pd[,time:=factor(time, levels = time_order)]
+
+gp <- ggplot(cluster_pd, aes(x = time,
+                             y = scaled_vst,
+                             colour = `MEM.SHIP`,
+                             group = NAME)) +
+  theme_minimal(base_size = 8) +
+  xlab(NULL) + ylab("Scaled, mapped reads") +
+  facet_wrap(~ cluster) +
+  geom_point()
+
+ggsave("test.pdf", gp)
+fwrite(cluster_pd, "output/asw_timecourse/deseq2/gene_clusters.csv")
+
+##can change m and cluster #
