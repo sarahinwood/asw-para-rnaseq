@@ -37,13 +37,20 @@ expression_matrix <- as.matrix(data.frame(mean_vst_wide, row.names = "rn"))
 pheno_data <- data.frame(row.names = colnames(expression_matrix), treatment = colnames(expression_matrix))
 vg <- ExpressionSet(assayData = expression_matrix[sig_gene_names,], phenoData = new('AnnotatedDataFrame', data = pheno_data))
 
-##run this bit on biochemcompute
-vg_s <- standardise(vg)
-#optimise parameters
-m <- 2.3
-x <- Dmin(vg_s, m, crange = seq(4, 16, 2), repeats = 1)
-
+##run from here down on biochemcompute - can't on my laptop
 set.seed(seed)
+##standardise expression values to have mean of 0 and st dev of 1 - necessary for mfuzz
+vg_s <- standardise(vg)
+#optimise parameters - mestimate(vg_s)?
+##m determines influence of noise on cluster analysis - increasing m reduces the influence of genes with low membership values
+#m prevents clustering of random data
+##mestimate gave 2.96 - but don't want it this high???
+m <- 2.3
+#use to determine no. clusters - Dmin = mindist between clusters, should decline slower after reaching optimal no. of clusters
+x <- Dmin(vg_s, m, crange = seq(4, 16, 2), repeats = 1)
+diff(x)
+
+#c=no. clusters
 c1 <- mfuzz(vg_s, c = 5, m=m)
 clusters<- acore(vg_s, c1, min.acore = 0.7)
 
@@ -76,7 +83,7 @@ gp <- ggplot(cluster_pd, aes(x = time,
   facet_wrap(~ cluster) +
   geom_point()
 
-ggsave("test.pdf", gp)
+ggsave("output/asw_timecourse/deseq2/test.pdf", gp)
 fwrite(cluster_pd, "output/asw_timecourse/deseq2/gene_clusters.csv")
 
-##can change m and cluster #
+##can play with and change m and cluster #
