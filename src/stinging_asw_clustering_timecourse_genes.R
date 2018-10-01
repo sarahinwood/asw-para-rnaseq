@@ -1,5 +1,6 @@
 library("DESeq2")
 library("data.table")
+library("ggplot2")
 
 seed <- 6
 
@@ -38,6 +39,7 @@ pheno_data <- data.frame(row.names = colnames(expression_matrix), treatment = co
 vg <- ExpressionSet(assayData = expression_matrix[sig_gene_names,], phenoData = new('AnnotatedDataFrame', data = pheno_data))
 
 ##run from here down on biochemcompute - can't on my laptop
+library(Mfuzz)
 set.seed(seed)
 ##standardise expression values to have mean of 0 and st dev of 1 - necessary for mfuzz
 vg_s <- standardise(vg)
@@ -81,7 +83,7 @@ gp <- ggplot(cluster_pd, aes(x = time,
   theme_minimal(base_size = 8) +
   xlab(NULL) + ylab("Scaled, mapped reads") +
   facet_wrap(~ cluster) +
-  geom_point()
+  geom_line()
 
 ggsave("output/asw_timecourse/deseq2/test.pdf", gp)
 fwrite(cluster_pd, "output/asw_timecourse/deseq2/gene_clusters.csv")
