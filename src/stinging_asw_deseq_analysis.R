@@ -43,5 +43,32 @@ sig_gene_names <- row.names(sig_genes)
   ##save list of sig gene names
 fwrite(data.table(sig_gene_names), "output/asw_timecourse/deseq2/timecourse_sig_gene_names.csv")
 
+  ##Order results based of padj
+ordered_sig_degs <- sig_genes[order(sig_genes$padj),]
+  ##make datatable and write to output
+ordered_degs_table <- data.table(data.frame(ordered_sig_degs), keep.rownames = TRUE)
+fwrite(ordered_degs_table, "output/asw_timecourse/deseq2/timecourse_analysis_sig_degs.csv")
+  
+  ##read in annotated transcriptome
+trinotate_report <- fread("data/trinotate_annotation_report.txt")
+setnames(ordered_degs_table, old=c("rn"), new=c("#gene_id"))
+  ##merge list of sig genes with annotations
+sig_w_annots <- merge(ordered_degs_table, trinotate_report, by.x="#gene_id", by.y="#gene_id")
+  ##save file - in excel edit duplicated gene ids (where one DEG had multiple annotations for each isoform)
+fwrite(sig_w_annots, "output/asw_timecourse/deseq2/sig_genes_with_annots.csv")
+
+  ##read back in dedeup degs with annots
+dedup_sig_w_annots <- fread("output/asw_timecourse/deseq2/dedup_sig_genes_with_annots.csv")
+##sum of DEGs with no blastX annotation in transcriptome
+sum(dedup_sig_w_annots$sprot_Top_BLASTX_hit==".")
+##list of DEGs with no blastX annotation
+no_blastx_annot_degs <- dedup_sig_w_annots[dedup_sig_w_annots$sprot_Top_BLASTX_hit == ".",]
+##list of DEGs with no blastX OR blastP
+no_blast_annot_degs <- no_blastx_annot_degs[no_blastx_annot_degs$sprot_Top_BLASTP_hit == ".",]
+##make list of degs with no blast annot.
+list_degs_no_annot <- data.table(no_blast_annot_degs$transcript_id)
+##write list of degs with no annot.
+fwrite(list_degs_no_annot, "output/asw_timecourse/deseq2/degs_with_no_annot.txt")
+
 ##plot counts for genes of interest, sub in name
 plotCounts(dds_abdo, "TRINITY_DN13642_c0_g1", intgroup = c("Treatment", "Wasp_Location"))
