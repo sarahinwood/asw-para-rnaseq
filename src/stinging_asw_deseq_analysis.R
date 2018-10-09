@@ -2,6 +2,7 @@ library("tximport")
 library("data.table")
 library("DESeq2")
 library("ggplot2")
+library(Biostrings)
 
 gene2tx <- fread("data/asw_Trinity.fasta.gene_trans_map", header = FALSE)
 tx2gene <- data.frame(gene2tx[, .(V2, V1)])
@@ -74,4 +75,23 @@ list_degs_no_annot <- data.table(no_blast_annot_degs$transcript_id)
 fwrite(list_degs_no_annot, "output/asw_timecourse/deseq2/degs_with_no_annot.txt")
 
   ##read in blast results?
+timecourse_no_annot_blast <- fread("output/asw_timecourse/no_annot/blastx_titles.outfmt6")
+  ##rename columns
+setnames(timecourse_no_annot_blast, old=c("V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "V10", "V11", "V12", "V13"), new=c("#gene_id", "nr_db_id", "%_identical_matches", "alignment_length", "no_mismatches", "no_gap_openings", "query_start", "query_end", "subject_start", "subject_end", "evalue", "bit_score", "annotation"))
+  ##save formatted blast results (then dedup annotations in excel - keep annot with highest e-value)
+fwrite(timecourse_no_annot_blast, "output/asw_timecourse/no_annot/blastx_timecourse_annotations.csv")
+
+  ##read in dedup blast results
+dedup_timecourse_blast <- fread("output/asw_timecourse/no_annot/dedup_blastx_timecourse_annotations.csv")
+  ##check unique id in original blast results = dedeup blast (66)
+  ##use to find missing transcripts (ones accidentally deleted during dedup in excel)
+unique_blast_results <- data.table(timecourse_no_annot_blast[,unique(gene_id)])
+fwrite(unique_blast_results, "output/asw_timecourse/no_annot/unique.csv")
+  ##does this =66?
+dedup_timecourse_blast[,unique(gene_id)]
+
+  ##merge blastx annotations for unann transcripts with transcriptome annotations
+all_annots_degs <- merge(dedup_sig_w_annots, dedup_timecourse_blast, by.x="transcript_id", by.y="#gene_id", all = TRUE)
+fwrite(all_annots_degs, "output/asw_timecourse/no_annot/trinotate_and_blastx_annots_degs.csv")
+
 

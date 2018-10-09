@@ -89,3 +89,9 @@ ggsave("output/asw_timecourse/deseq2/test.pdf", gp)
 fwrite(cluster_pd, "output/asw_timecourse/deseq2/gene_clusters.csv")
 
 ##can play with and change m and cluster #
+
+##to add annotations to clusters - back on my laptop
+deg_annotations <- fread("output/asw_timecourse/no_annot/trinotate_and_blastx_annots_degs.csv")
+clusters <- fread("output/asw_timecourse/deseq2/gene_clusters.csv")
+cluster_annotations <- merge(clusters, deg_annotations, by.x="NAME", by.y="#gene_id")
+fwrite(cluster_annotations, "output/asw_timecourse/deseq2/clusters_and_annotations.csv")

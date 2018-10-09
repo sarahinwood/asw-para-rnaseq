@@ -67,6 +67,9 @@ list_degs_no_annot <- data.table(no_blast_annot_degs$transcript_id)
   ##write list of degs with no annot.
 fwrite(list_degs_no_annot, "output/exposed/deseq2/degs_with_no_annot.txt")
 
+  ##read in and format blast results for unann degs
+blastx_unann_degs <- fread("output/exposed/no_annot/blastx_titles.outfmt6")
+setnames(blastx_unann_degs, old=c("V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "V10", "V11", "V12", "V13"), new=c("contig_id", "nr_db_id", "%_identical_matches", "alignment_length", "no_mismatches", "no_gap_openings", "query_start", "query_end", "subject_start", "subject_end", "evalue", "bit_score", "annotation"))
+fwrite(blastx_unann_degs, "output/exposed/no_annot/blastx_exposed_results.csv")
 
-
-
+  ##dedup blast results in excel then read back in
