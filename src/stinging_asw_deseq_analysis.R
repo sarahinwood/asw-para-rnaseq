@@ -95,8 +95,6 @@ dedup_timecourse_blast[,unique(`#gene_id`)]
 all_annots_degs <- merge(dedup_sig_w_annots, dedup_timecourse_blast, by.x="transcript_id", by.y="#gene_id", all = TRUE)
 fwrite(all_annots_degs, "output/asw_timecourse/no_annot/trinotate_and_blastx_annots_degs.csv")
 
-
-
 ##filter out genes in blastx annotation column that contain "uncharacterized" or "hypothetical" to do interproscan
 unchar_or_hypo_annots <- dplyr::filter(all_annots_degs, grepl('uncharacterized|hypothetical', annotation))
 unchar_hypo_ids <- data.table(unchar_or_hypo_annots$transcript_id)
