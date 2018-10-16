@@ -2,7 +2,8 @@ library("tximport")
 library("data.table")
 library("DESeq2")
 library("ggplot2")
-library(Biostrings)
+library("Biostrings")
+library("dplyr")
 
 gene2tx <- fread("data/asw_Trinity.fasta.gene_trans_map", header = FALSE)
 tx2gene <- data.frame(gene2tx[, .(V2, V1)])
@@ -85,13 +86,19 @@ fwrite(timecourse_no_annot_blast, "output/asw_timecourse/no_annot/blastx_timecou
 dedup_timecourse_blast <- fread("output/asw_timecourse/no_annot/dedup_blastx_timecourse_annotations.csv")
   ##check unique id in original blast results = dedeup blast (66)
   ##use to find missing transcripts (ones accidentally deleted during dedup in excel)
-unique_blast_results <- data.table(timecourse_no_annot_blast[,unique(gene_id)])
+unique_blast_results <- data.table(timecourse_no_annot_blast[,unique(`#gene_id`)])
 fwrite(unique_blast_results, "output/asw_timecourse/no_annot/unique.csv")
   ##does this =66?
-dedup_timecourse_blast[,unique(gene_id)]
+dedup_timecourse_blast[,unique(`#gene_id`)]
 
   ##merge blastx annotations for unann transcripts with transcriptome annotations
 all_annots_degs <- merge(dedup_sig_w_annots, dedup_timecourse_blast, by.x="transcript_id", by.y="#gene_id", all = TRUE)
 fwrite(all_annots_degs, "output/asw_timecourse/no_annot/trinotate_and_blastx_annots_degs.csv")
 
+
+
+##filter out genes in blastx annotation column that contain "uncharacterized" or "hypothetical" to do interproscan
+unchar_or_hypo_annots <- dplyr::filter(all_annots_degs, grepl('uncharacterized|hypothetical', annotation))
+unchar_hypo_ids <- data.table(unchar_or_hypo_annots$transcript_id)
+fwrite(unchar_hypo_ids, "output/asw_timecourse/interproscan/unchar_hypo_annot_ids.txt")
 
