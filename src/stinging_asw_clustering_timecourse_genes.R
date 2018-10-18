@@ -95,3 +95,16 @@ deg_annotations <- fread("output/asw_timecourse/no_annot/trinotate_and_blastx_an
 clusters <- fread("output/asw_timecourse/deseq2/gene_clusters.csv")
 cluster_annotations <- merge(clusters, deg_annotations, by.x="NAME", by.y="#gene_id")
 fwrite(cluster_annotations, "output/asw_timecourse/deseq2/raw_clusters_and_annotations.csv")
+
+##Read in interpro results
+interpro_results <- fread("output/asw_timecourse/interproscan/unchar_hypo_annot_degs.fasta.tsv", fill=TRUE)
+setnames(interpro_results, old=c("V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14"), new=c("transcript_id", "Seq MD5 digest", "Seq. length", "Analysis", "Signature Accession", "Signature Description", "Start", "Stop", "e-value", "Status", "Date", "InterPro Annotation Accession", "InterPro Annotation Description", "GO Terms"))
+##Filter for columns I want
+interpro_annots <- select(interpro_results, transcript_id, `Signature Description`, `e-value`, `InterPro Annotation Description`, `GO Terms`)
+fwrite(interpro_annots, "output/asw_timecourse/interproscan/interpro_descriptions.csv")
+
+##not working??
+cluster_annots_interpro <- merge(cluster_annotations, interpro_annots, by.x = "transcript_id", by.y = "transcript_id", all.x = TRUE, all.y = TRUE)
+##subset to keep only those where cluster does NOT = NA --> should probably fix this sometime*******
+cluster_annots_interpro <- cluster_annots_interpro[,cluster_annots_interpro$cluster !=NA]
+fwrite(data.frame(cluster_annots_interpro), "output/asw_timecourse/deseq2/cluster_annots_+interpro.csv")

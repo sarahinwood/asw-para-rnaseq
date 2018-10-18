@@ -100,3 +100,4 @@ unchar_or_hypo_annots <- dplyr::filter(all_annots_degs, grepl('uncharacterized|h
 unchar_hypo_ids <- data.table(unchar_or_hypo_annots$transcript_id)
 fwrite(unchar_hypo_ids, "output/asw_timecourse/interproscan/unchar_hypo_annot_ids.txt")
 
+
