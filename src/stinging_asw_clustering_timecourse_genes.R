@@ -103,8 +103,12 @@ setnames(interpro_results, old=c("V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8",
 interpro_annots <- select(interpro_results, transcript_id, `Signature Description`, `e-value`, `InterPro Annotation Description`, `GO Terms`)
 fwrite(interpro_annots, "output/asw_timecourse/interproscan/interpro_descriptions.csv")
 
-##not working??
 cluster_annots_interpro <- merge(cluster_annotations, interpro_annots, by.x = "transcript_id", by.y = "transcript_id", all.x = TRUE, all.y = TRUE)
-##subset to keep only those where cluster does NOT = NA --> should probably fix this sometime*******
-cluster_annots_interpro <- cluster_annots_interpro[,cluster_annots_interpro$cluster !=NA]
-fwrite(data.frame(cluster_annots_interpro), "output/asw_timecourse/deseq2/cluster_annots_+interpro.csv")
+
+
+##subset to keep only those where cluster does NOT = NA --> should probably fix this sometime*******##not working??
+cluster_interpro <- cluster_annots_interpro[,cluster_annots_interpro$cluster!=NA]
+
+
+cluster_annots_interpro_dt <- data.table(cluster_annots_interpro)
+fwrite(data.table(cluster_annots_interpro), "output/asw_timecourse/deseq2/cluster_annots_+interpro.csv")
