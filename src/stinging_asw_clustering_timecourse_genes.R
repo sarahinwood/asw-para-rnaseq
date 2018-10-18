@@ -1,6 +1,7 @@
 library("DESeq2")
 library("data.table")
 library("ggplot2")
+library("dplyr")
 
 seed <- 6
 
@@ -95,15 +96,19 @@ deg_annotations <- fread("output/asw_timecourse/no_annot/trinotate_and_blastx_an
 clusters <- fread("output/asw_timecourse/deseq2/gene_clusters.csv")
 cluster_annotations <- merge(clusters, deg_annotations, by.x="NAME", by.y="#gene_id")
 fwrite(cluster_annotations, "output/asw_timecourse/deseq2/raw_clusters_and_annotations.csv")
+dedup_cluster_annots <- cluster_annotations[cluster_annotations$time == "Control",]
 
 ##Read in interpro results
 interpro_results <- fread("output/asw_timecourse/interproscan/unchar_hypo_annot_degs.fasta.tsv", fill=TRUE)
 setnames(interpro_results, old=c("V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14"), new=c("transcript_id", "Seq MD5 digest", "Seq. length", "Analysis", "Signature Accession", "Signature Description", "Start", "Stop", "e-value", "Status", "Date", "InterPro Annotation Accession", "InterPro Annotation Description", "GO Terms"))
+
+##fix transcript id
+interpro_transcript_id <- interpro_results[,tstrsplit(transcript_id, "_")]
+interpro_results$transcript_id <- paste(interpro_transcript_id$V1,"_",interpro_transcript_id$V2,"_",interpro_transcript_id$V3,"_",interpro_transcript_id$V4,"_",interpro_transcript_id$V5, sep="")
 ##Filter for columns I want
 interpro_annots <- select(interpro_results, transcript_id, `Signature Description`, `e-value`, `InterPro Annotation Description`, `GO Terms`)
 fwrite(interpro_annots, "output/asw_timecourse/interproscan/interpro_descriptions.csv")
 
-cluster_annots_interpro <- merge(cluster_annotations, interpro_annots, by.x = "transcript_id", by.y = "transcript_id", all.x = TRUE, all.y = TRUE)
-##subset to keep only those where cluster does NOT = NA
-cluster_interpro <- data.table(cluster_annots_interpro[!is.na(cluster_annots_interpro$cluster),])
-fwrite(cluster_interpro, "output/asw_timecourse/deseq2/cluster_annots_+interpro.csv")
+##merge interproscan with other annotations
+merged <- merge(dedup_cluster_annots, interpro_annots, by.x = "transcript_id", by.y = "transcript_id", all.x = TRUE, all.y = FALSE)
+fwrite(merged, "output/asw_timecourse/deseq2/cluster_annots_+interpro.csv")
