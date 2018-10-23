@@ -97,6 +97,10 @@ fwrite(all_annots_degs, "output/asw_timecourse/no_annot/trinotate_and_blastx_ann
 
 ##filter out genes in blastx annotation column that contain "uncharacterized" or "hypothetical" to do interproscan
 unchar_or_hypo_annots <- dplyr::filter(all_annots_degs, grepl('uncharacterized|hypothetical', annotation))
+
+no_manual_annot <- all_annots_degs %>% filter(is.na(annotation))
+no_annot <- no_manual_annot[no_manual_annot$sprot_Top_BLASTX_hit == ".",]
+
 unchar_hypo_ids <- data.table(unchar_or_hypo_annots$transcript_id)
 fwrite(unchar_hypo_ids, "output/asw_timecourse/interproscan/unchar_hypo_annot_ids.txt")
 
