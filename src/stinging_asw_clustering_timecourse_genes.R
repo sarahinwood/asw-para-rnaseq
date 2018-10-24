@@ -108,7 +108,3 @@ interpro_results$transcript_id <- paste(interpro_transcript_id$V1,"_",interpro_t
 ##Filter for columns I want
 interpro_annots <- select(interpro_results, transcript_id, `Signature Description`, `e-value`, `InterPro Annotation Description`, `GO Terms`)
 fwrite(interpro_annots, "output/asw_timecourse/interproscan/interpro_descriptions.csv")
-
-##merge interproscan with other annotations
-merged <- merge(dedup_cluster_annots, interpro_annots, by.x = "transcript_id", by.y = "transcript_id", all.x = TRUE, all.y = FALSE)
-fwrite(merged, "output/asw_timecourse/deseq2/cluster_annots_+interpro.csv")
