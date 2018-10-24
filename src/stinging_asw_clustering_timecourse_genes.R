@@ -99,7 +99,7 @@ fwrite(cluster_annotations, "output/asw_timecourse/deseq2/raw_clusters_and_annot
 dedup_cluster_annots <- cluster_annotations[cluster_annotations$time == "Control",]
 
 ##Read in interpro results
-interpro_results <- fread("output/asw_timecourse/interproscan/unchar_hypo_annot_degs.fasta.tsv", fill=TRUE)
+interpro_results <- fread("output/asw_timecourse/interproscan/interproscan_degs.fasta.tsv", fill=TRUE)
 setnames(interpro_results, old=c("V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14"), new=c("transcript_id", "Seq MD5 digest", "Seq. length", "Analysis", "Signature Accession", "Signature Description", "Start", "Stop", "e-value", "Status", "Date", "InterPro Annotation Accession", "InterPro Annotation Description", "GO Terms"))
 
 ##fix transcript id
