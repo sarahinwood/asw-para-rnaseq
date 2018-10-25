@@ -54,6 +54,10 @@ sig_w_annots <- merge (ordered_sig_res_group_table, trinotate_report, by.x="#gen
   ##save file - in excel edit duplicated gene ids (where one DEG had multiple annotations for each isoform)
 fwrite(sig_w_annots, "output/exposed/deseq2/sig_genes_with_annots.csv")
 
+  ##search for viral annotations
+virus_annots <- dplyr::filter(trinotate_report, grepl('virus', sprot_Top_BLASTX_hit))
+fwrite(virus_annots, "output/exposed/viral_annots_trinotate.csv")
+  
   ##read back in dedeup sig genes w/annots
 dedup_sig_w_trinotate_annots <- fread("output/exposed/deseq2/dedup_sig_genes_with_trinotate_annots.csv")
   ##sum of DEGs with no blastX annotation in transcriptome
