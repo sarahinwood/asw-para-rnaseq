@@ -1,5 +1,6 @@
 library('data.table')
 library('fgsea')
+library('ggplot2')
 
 trinotate_report <- fread("data/trinotate_annotation_report.txt", na.strings = ".")
 gene_ids <- trinotate_report[!is.na(gene_ontology_pfam), unique(`#gene_id`)]
@@ -26,6 +27,17 @@ names(ranks) <- res_group[!is.na(stat), rn]
 
 fgsea_res <- fgsea(pathways, ranks, nperm = 1000)
 sorted_fgsea_res <- fgsea_res[order(fgsea_res$padj)]
-##46 enriched GO terms
+##46 enriched GO terms -> using blast GO instead of pfam GO gives 0 terms padj<0.05, and 569 padj<0.1
 sum(sorted_fgsea_res$padj<0.05)
-fwrite(sorted_fgsea_res, "output/exposed/fgsea/fgsea_GOterm_deseqstat_res.csv")
+fwrite(sorted_fgsea_res, "output/exposed/fgsea/fgsea_GOtermpfam_deseqstat_res.csv")
+
+##read in file with functions added to GO terms when padj<0.1
+annot_fgsea_res <- fread("output/exposed/fgsea/annot_fgsea_GOtermpfam_deseqstat_res.csv")
+
+##plot normalised enrichment for GO terms where padj<0.1 (but indicate if padj<0.05)
+ggplot(annot_fgsea_res, aes(reorder(pathway_name, NES), NES)) +
+  geom_col(aes(fill=padj<0.05)) +
+  coord_flip() +
+  labs(x="GO Pathway", y="FGSEA Normalized Enrichment Score") + 
+  theme_minimal()
+
