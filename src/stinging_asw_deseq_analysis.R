@@ -21,8 +21,6 @@ setkey(sample_data, Sample_name)
 
   ##Create dds object and link to sample data
 dds <- DESeqDataSetFromTximport(txi, colData = sample_data[colnames(txi$counts)], design = ~1)
-  ##save dds as a file for import in clustering timecourse genes script
-saveRDS(dds, file = "output/asw_timecourse/deseq2/dds.rds")
 
   ##Select only abdomen samples
 dds_abdo <- dds[,dds$Tissue == "Abdomen"]
@@ -37,6 +35,9 @@ dds_abdo <- DESeq(dds_abdo, test = "LRT", reduced = ~Wasp_Location)
 dds_abdo_res <- results(dds_abdo, alpha = 0.1)
  ##order based off padj
 ordered_dds_abdo_res <- dds_abdo_res[order(dds_abdo_res$padj),]
+
+##save dds as a file for import in clustering timecourse genes script
+saveRDS(dds, file = "output/asw_timecourse/deseq2/dds.rds")
 
   ##make list of sig genes
 sig_genes <- subset(dds_abdo_res, padj < 0.1)

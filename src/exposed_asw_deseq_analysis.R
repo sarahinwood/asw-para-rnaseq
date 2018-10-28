@@ -19,7 +19,10 @@ setkey(sample_data, Sample_name)
 
   ##create dds object and link to sample data  
 dds <- DESeqDataSetFromTximport(txi, colData = sample_data[colnames(txi$counts)], design = ~1)
-  ##create dds object for group analysis
+  ##save dds object
+saveRDS(dds, file = "output/exposed/deseq2/dds.rds")
+
+ ##create dds object for group analysis
 dds_group <- copy(dds)
   ##create groupings of tissue+treatment
 dds_group$group <- factor(paste(dds$Tissue,dds$Treatment,sep="_"))
@@ -27,6 +30,9 @@ dds_group$group <- factor(paste(dds$Tissue,dds$Treatment,sep="_"))
 design(dds_group) <- ~group
   ##run deseq2 and generate results
 dds_group <- DESeq(dds_group)
+  ##save dds_group
+saveRDS(dds_group, file = "output/exposed/deseq2/dds_group.rds")
+
 resultsNames(dds_group)
   ##Make table of results for exposed vs control heads
 res_group <- results(dds_group, contrast = c("group", "Head_Exposed", "Head_Control"), lfcThreshold = 1, alpha = 0.1)
@@ -34,17 +40,12 @@ res_group <- results(dds_group, contrast = c("group", "Head_Exposed", "Head_Cont
 ordered_res_group <- res_group[order(res_group$padj),]
   ##Make data table and write to output
 ordered_res_group_table <- data.table(data.frame(ordered_res_group), keep.rownames = TRUE)
+fwrite(ordered_res_group_table, "output/exposed/deseq2/res_group.csv")
 ordered_sig_res_group_table <- subset(ordered_res_group_table, padj < 0.05)
 fwrite(ordered_sig_res_group_table, "output/exposed/deseq2/exposed_analysis_sig_degs.csv", col.names = TRUE, row.names = FALSE)
 
 ##Sub in any gene of interest to plot counts  
 plotCounts(dds_group, "TRINITY_DN2391_c0_g3", intgroup = c("group"))
-
-##PCA plot - first must log transform
-##variance stabilising transformations method, impt to set blind=true
-vst <- vst(dds, blind=TRUE)
-##plot PCA to investigate sample clustering
-plotPCA(vst, intgroup=c("Treatment", "Tissue", "Wasp_Location"))
 
   ##read in annotated transcriptome
 trinotate_report <- fread("data/trinotate_annotation_report.txt")
@@ -80,5 +81,5 @@ blastx_unann_degs[,unique(`#gene_id`)]
 #read in dedup annotations and check unique id = 121
 dedup_blast_exposed <- fread("output/exposed/no_annot/dedup_blastx_exposed_results.csv")
 dedup_blast_exposed[,unique(`#gene_id`)]
-sig_blastx_trinotate_annots <- merge(dedup_sig_w_annots, dedup_blast_exposed, by.x="annotation_transcript_id", by.y="#gene_id", all = TRUE)
+sig_blastx_trinotate_annots <- merge(dedup_sig_w_trinotate_annots, dedup_blast_exposed, by.x="annotation_transcript_id", by.y="#gene_id", all = TRUE)
 fwrite(sig_blastx_trinotate_annots, "output/exposed/deseq2/sig_genes_trinotate_blastx_annots.csv")
