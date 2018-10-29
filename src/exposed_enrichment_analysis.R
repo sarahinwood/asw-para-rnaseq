@@ -33,8 +33,12 @@ fwrite(sorted_fgsea_res, "output/exposed/fgsea/fgsea_GOtermpfam_deseqstat_res.cs
 
 ##read in file with functions added to GO terms when padj<0.1
 annot_fgsea_res <- fread("output/exposed/fgsea/annot_fgsea_GOtermpfam_deseqstat_res.csv")
+##split into 3 tables --> biological process, cellular component and molecular function
+bp_res <- annot_fgsea_res[annot_fgsea_res$`GO term type`=="biological process"]
+cc_res <- annot_fgsea_res[annot_fgsea_res$`GO term type`=="cellular component"]
+mf_res <- annot_fgsea_res[annot_fgsea_res$`GO term type`=="molecular function"]
 
-##plot normalised enrichment for GO terms where padj<0.1 (but indicate if padj<0.05)
+##plot normalised enrichment for GO terms where padj<0.1 (but indicate if padj<0.05) - can change to only bp, cc or mf
 ggplot(annot_fgsea_res, aes(reorder(pathway_name, NES), NES)) +
   geom_col(aes(fill=padj<0.05)) +
   coord_flip() +
