@@ -29,7 +29,7 @@ fgsea_res <- fgsea(pathways, ranks, nperm = 1000)
 sorted_fgsea_res <- fgsea_res[order(fgsea_res$padj)]
 ##46 enriched GO terms -> using blast GO instead of pfam GO gives 0 terms padj<0.05, and 569 padj<0.1
 sum(sorted_fgsea_res$padj<0.05)
-fwrite(sorted_fgsea_res, "output/exposed/fgsea/fgsea_GOtermpfam_deseqstat_res.csv")
+fwrite(sorted_fgsea_res, "output/exposed/fgsea/fgsea_exposed_GOtermpfam_deseqstat_res.csv")
 
 ##read in file with functions added to GO terms when padj<0.1
 annot_fgsea_res <- fread("output/exposed/fgsea/annot_fgsea_GOtermpfam_deseqstat_res.csv")

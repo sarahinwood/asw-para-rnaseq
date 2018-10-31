@@ -108,3 +108,11 @@ interpro_results$transcript_id <- paste(interpro_transcript_id$V1,"_",interpro_t
 ##Filter for columns I want
 interpro_annots <- select(interpro_results, transcript_id, `Signature Description`, `e-value`, `InterPro Annotation Description`, `GO Terms`)
 fwrite(interpro_annots, "output/asw_timecourse/interproscan/interpro_descriptions.csv")
+
+clustered_genes <- unique(clusters$NAME)
+non_clustered_genes <- data.table(setdiff(sig_gene_names, clustered_genes))
+all_annots_degs <- fread("output/asw_timecourse/no_annot/trinotate_and_blastx_annots_degs.csv")
+non_clustered_annots <- merge(x = non_clustered_genes, all_annots_degs, by.x = "V1", by.y = "#gene_id", all.x = TRUE, all.y = FALSE)
+fwrite(non_clustered_annots, "output/asw_timecourse/deseq2/non_clustered_sig_degs_annots.csv")
+
+
