@@ -46,3 +46,18 @@ ggplot(mf_res, aes(reorder(pathway_name, NES), NES)) +
   labs(x="Molecular Function GO Pathway", y="FGSEA Normalized Enrichment Score") + 
   theme_minimal()
 
+##find genes in GO:signal transduction and look at annots
+signal_transduction_genes <- go_term_table[go_term_table$accessions == "GO:0007165"]
+sig_trans_annots <- merge(x = signal_transduction_genes, y = trinotate_report, by.x = "gene_id", by.y="#gene_id", all.x = TRUE, all.y = FALSE)
+fwrite(sig_trans_annots, "output/asw_timecourse/fgsea/signal_transduction_genes.csv")
+
+##find genes in GO:regulation of transcription, DNA-templated
+transcription_reg_genes <- go_term_table[go_term_table$accessions == "GO:0006355"]
+transcr_reg_annots <- merge(x = transcription_reg_genes, y = trinotate_report, by.x = "gene_id", by.y="#gene_id", all.x = TRUE, all.y = FALSE)
+fwrite(transcr_reg_annots, "output/asw_timecourse/fgsea/transcription_reg_genes.csv")
+trans_reg_res <- fgsea_res[fgsea_res$pathway == "GO:0006355",]
+##Core members that contribute to ES score (present in list before running sum reaches max.dev. from 0)
+trans_reg_leading_edge <- data.frame(trans_reg_res$leadingEdge)
+setnames(trans_reg_leading_edge, old=c("c..TRINITY_DN3097_c0_g1....TRINITY_DN9804_c0_g1....TRINITY_DN12984_c0_g1..."), new=c("gene_id"))
+trans_leading_annots <- merge(trans_reg_leading_edge, trinotate_report, by.x="gene_id", by.y="#gene_id")
+fwrite(trans_leading_annots, "output/asw_timecourse/E(spl)/trans_reg_leading_edge_annots.csv")
