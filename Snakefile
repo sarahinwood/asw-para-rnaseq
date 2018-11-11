@@ -73,13 +73,14 @@ all_samples = sorted(set(sample_key['Sample_name']))
 rule target:
     input:
      expand('output/bbduk_trim/{sample}_r1.fq.gz', sample = all_samples),
-     expand('output/bbduk_trim/{sample}_r2.fq.gz', sample = all_samples)
+     expand('output/bbduk_trim/{sample}_r2.fq.gz', sample = all_samples),
+     expand('output/salmon/asw/{sample}_quant/quant.sf', sample = all_samples)
 
 rule asw_salmon_quant:
     input:
         index_output = 'output/salmon/asw/transcripts_index/hash.bin',
-        left = 'data/bbduk_trim/{sample}_r1.fq.gz',
-        right = 'data/bbduk_trim/{sample}_r2.fq.gz'
+        left = 'output/bbduk_trim/{sample}_r1.fq.gz',
+        right = 'output/bbduk_trim/{sample}_r2.fq.gz'
     output:
         'output/salmon/asw/{sample}_quant/quant.sf'
     params:
@@ -103,7 +104,7 @@ rule asw_salmon_quant:
 
 rule asw_salmon_index:
     input:
-        transcriptome_length_filtered = 'data/sorted_fasta/asw_isoforms_by_length.fasta'
+        transcriptome_length_filtered = 'data/isoforms_by_length.fasta'
     output:
         'output/salmon/asw/transcripts_index/hash.bin'
     params:
