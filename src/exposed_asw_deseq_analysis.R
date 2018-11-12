@@ -3,7 +3,7 @@ library("data.table")
 library("DESeq2")
 library("ggplot2")
 
-gene2tx <- fread("data/asw_Trinity.fasta.gene_trans_map", header = FALSE)
+gene2tx <- fread("data/Trinity.fasta.gene_trans_map", header = FALSE)
 tx2gene <- data.frame(gene2tx[, .(V2, V1)])
 
   ##Find all salmon quant files
@@ -60,15 +60,15 @@ virus_annots <- dplyr::filter(trinotate_report, grepl('virus', sprot_Top_BLASTX_
 fwrite(virus_annots, "output/exposed/viral_annots_trinotate.csv")
   
   ##read back in dedeup sig genes w/annots
-dedup_sig_w_trinotate_annots <- fread("output/exposed/deseq2/dedup_sig_genes_with_trinotate_annots.csv")
+dedup_sig_w_trinotate_annots <- fread("output/exposed/deseq2/dedup_sig_genes_with_annots.csv")
   ##sum of DEGs with no blastX annotation in transcriptome
-sum(dedup_sig_w_annots$sprot_Top_BLASTX_hit==".")
+sum(dedup_sig_w_trinotate_annots$sprot_Top_BLASTX_hit==".")
   ##list of DEGs with no blastX annotation
-no_blastx_annot_degs <- dedup_sig_w_annots[dedup_sig_w_annots$sprot_Top_BLASTX_hit == ".",]
+no_blastx_annot_degs <- dedup_sig_w_trinotate_annots[dedup_sig_w_trinotate_annots$sprot_Top_BLASTX_hit == ".",]
   ##list of DEGs with no blastX OR blastP
 no_blast_annot_degs <- no_blastx_annot_degs[no_blastx_annot_degs$sprot_Top_BLASTP_hit == ".",]
   ##make list of degs with no blast annot.
-list_degs_no_annot <- data.table(no_blast_annot_degs$annotation_transcript_id)
+list_degs_no_annot <- data.table(no_blast_annot_degs$transcript_id)
   ##write list of degs with no annot.
 fwrite(list_degs_no_annot, "output/exposed/deseq2/degs_with_no_annot.txt")
 

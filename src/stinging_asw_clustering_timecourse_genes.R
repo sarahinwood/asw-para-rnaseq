@@ -86,10 +86,10 @@ gp <- ggplot(cluster_pd, aes(x = time,
   facet_wrap(~ cluster) +
   geom_line()
 
-ggsave("output/asw_timecourse/deseq2/test.pdf", gp)
+ggsave("output/asw_timecourse/deseq2/clusters.pdf", gp)
 fwrite(cluster_pd, "output/asw_timecourse/deseq2/gene_clusters.csv")
 
-##can play with and change m and cluster #
+##Can do from here on laptop - can play with and change m and cluster #
 
 ##to add annotations to clusters - back on my laptop
 deg_annotations <- fread("output/asw_timecourse/no_annot/trinotate_and_blastx_annots_degs.csv")

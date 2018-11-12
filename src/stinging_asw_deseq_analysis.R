@@ -5,7 +5,7 @@ library("ggplot2")
 library("Biostrings")
 library("dplyr")
 
-gene2tx <- fread("data/asw_Trinity.fasta.gene_trans_map", header = FALSE)
+gene2tx <- fread("data/Trinity.fasta.gene_trans_map", header = FALSE)
 tx2gene <- data.frame(gene2tx[, .(V2, V1)])
 
   ##Find all salmon quant files
@@ -35,16 +35,15 @@ dds_abdo <- DESeq(dds_abdo, test = "LRT", reduced = ~Wasp_Location)
 dds_abdo_res <- results(dds_abdo, alpha = 0.1)
  ##order based off padj
 ordered_dds_abdo_res <- dds_abdo_res[order(dds_abdo_res$padj),]
-
 ##save dds as a file for import in clustering timecourse genes script
 saveRDS(dds, file = "output/asw_timecourse/deseq2/dds.rds")
-
   ##make list of sig genes
 sig_genes <- subset(dds_abdo_res, padj < 0.1)
   ##make list of sig gene names
 sig_gene_names <- row.names(sig_genes)
   ##save list of sig gene names
 fwrite(data.table(sig_gene_names), "output/asw_timecourse/deseq2/timecourse_sig_gene_names.csv")
+
 
   ##Order results based of padj
 ordered_sig_degs <- sig_genes[order(sig_genes$padj),]
