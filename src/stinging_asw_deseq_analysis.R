@@ -84,16 +84,11 @@ fwrite(timecourse_no_annot_blast, "output/asw_timecourse/no_annot/blastx_timecou
 
   ##read in dedup blast results
 dedup_timecourse_blast <- fread("output/asw_timecourse/no_annot/dedup_blastx_timecourse_annotations.csv")
-  ##check unique id in original blast results = dedeup blast (66)
-  ##use to find missing transcripts (ones accidentally deleted during dedup in excel)
-unique_blast_results <- data.table(timecourse_no_annot_blast[,unique(`#gene_id`)])
-fwrite(unique_blast_results, "output/asw_timecourse/no_annot/unique.csv")
-  ##does this =66?
 dedup_timecourse_blast[,unique(`#gene_id`)]
 
   ##merge blastx annotations for unann transcripts with transcriptome annotations
 all_annots_degs <- merge(dedup_sig_w_annots, dedup_timecourse_blast, by.x="transcript_id", by.y="#gene_id", all = TRUE)
-fwrite(all_annots_degs, "output/asw_timecourse/no_annot/trinotate_and_blastx_annots_degs.csv")
+fwrite(all_annots_degs, "output/asw_timecourse/deseq2/degs_trinotate_blastx_annots.csv")
 
 ##filter out genes in blastx annotation column that contain "uncharacterized" or "hypothetical"
 unchar_or_hypo_annots <- dplyr::filter(all_annots_degs, grepl('uncharacterized|hypothetical', annotation))

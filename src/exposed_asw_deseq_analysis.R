@@ -72,14 +72,23 @@ list_degs_no_annot <- data.table(no_blast_annot_degs$transcript_id)
   ##write list of degs with no annot.
 fwrite(list_degs_no_annot, "output/exposed/deseq2/degs_with_no_annot.txt")
 
-  ##dedup annotations in excel and then read in and format blast results for unann degs
+  ##make csv, then dedup annotations in excel & remove those with eval>2
 blastx_unann_degs <- fread("output/exposed/no_annot/blastx_titles.outfmt6")
 setnames(blastx_unann_degs, old=c("V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "V10", "V11", "V12", "V13"), new=c("#gene_id", "nr_db_id", "%_identical_matches", "alignment_length", "no_mismatches", "no_gap_openings", "query_start", "query_end", "subject_start", "subject_end", "evalue", "bit_score", "annotation"))
 fwrite(blastx_unann_degs, "output/exposed/no_annot/blastx_exposed_results.csv")
-##unique gene ids = 121
-blastx_unann_degs[,unique(`#gene_id`)]
-#read in dedup annotations and check unique id = 121
+##read in and format blast results for unann degs
 dedup_blast_exposed <- fread("output/exposed/no_annot/dedup_blastx_exposed_results.csv")
 dedup_blast_exposed[,unique(`#gene_id`)]
-sig_blastx_trinotate_annots <- merge(dedup_sig_w_trinotate_annots, dedup_blast_exposed, by.x="annotation_transcript_id", by.y="#gene_id", all = TRUE)
-fwrite(sig_blastx_trinotate_annots, "output/exposed/deseq2/sig_genes_trinotate_blastx_annots.csv")
+sig_blastx_trinotate_annots <- merge(dedup_sig_w_trinotate_annots, dedup_blast_exposed, by.x="transcript_id", by.y="#gene_id", all = TRUE)
+fwrite(sig_blastx_trinotate_annots, "output/exposed/deseq2/degs_trinotate_blastx_annots.csv")
+
+##filter out genes in blastx annotation column that contain "uncharacterized" or "hypothetical"
+unchar_or_hypo_annots <- dplyr::filter(sig_blastx_trinotate_annots, grepl('uncharacterized|hypothetical', annotation))
+##filter out genes with no manual annotation OR trinotate blastx annotation
+no_manual_annot <- all_annots_degs %>% filter(is.na(annotation))
+no_annot <- no_manual_annot[no_manual_annot$sprot_Top_BLASTX_hit == ".",]
+##merge list of genes with no annot OR hypothetical/uncharacterised and save for interproscan
+unchar_hypo_ids <- data.table(unchar_or_hypo_annots$transcript_id)
+noannot_ids <- data.table(no_annot$transcript_id)
+ids_for_interproscan <- merge(unchar_hypo_ids, noannot_ids, all = TRUE)
+fwrite(ids_for_interproscan, "output/exposed/interproscan/interproscan_ids.txt")
