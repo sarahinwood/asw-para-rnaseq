@@ -44,6 +44,9 @@ sig_gene_names <- row.names(sig_genes)
   ##save list of sig gene names
 fwrite(data.table(sig_gene_names), "output/asw_timecourse/deseq2/timecourse_sig_gene_names.csv")
 
+##write list of results for all genes for FGSEA analysis
+timecourse_all <- data.table(data.frame(dds_abdo_res), keep.rownames=TRUE)
+fwrite(timecourse_all, "output/asw_timecourse/deseq2/timecourse_all_genes.csv")
 
   ##Order results based of padj
 ordered_sig_degs <- sig_genes[order(sig_genes$padj),]

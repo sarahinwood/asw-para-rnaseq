@@ -25,23 +25,24 @@ setorder(res_group, stat)
 ranks <- res_group[!is.na(stat), stat]
 names(ranks) <- res_group[!is.na(stat), rn]
 
-fgsea_res <- fgsea(pathways, ranks, nperm = 1000)
+fgsea_res <- fgsea(pathways, ranks, nperm = 10000)
 sorted_fgsea_res <- fgsea_res[order(fgsea_res$padj)]
 ##46 enriched GO terms -> using blast GO instead of pfam GO gives 0 terms padj<0.05, and 569 padj<0.1
 sum(sorted_fgsea_res$padj<0.05)
 fwrite(sorted_fgsea_res, "output/exposed/fgsea/fgsea_exposed_GOtermpfam_deseqstat_res.csv")
 
 ##read in file with functions added to GO terms when padj<0.1
-annot_fgsea_res <- fread("output/exposed/fgsea/annot_fgsea_GOtermpfam_deseqstat_res.csv")
+annot_fgsea_res <- fread("output/exposed/fgsea/annot_fgsea_exposed_GOtermpfam_deseqstat_res.csv")
 ##split into 3 tables --> biological process, cellular component and molecular function
-bp_res <- annot_fgsea_res[annot_fgsea_res$`GO term type`=="biological process"]
-cc_res <- annot_fgsea_res[annot_fgsea_res$`GO term type`=="cellular component"]
-mf_res <- annot_fgsea_res[annot_fgsea_res$`GO term type`=="molecular function"]
+bp_res <- annot_fgsea_res[annot_fgsea_res$`pathway_kind`=="biological process"]
+cc_res <- annot_fgsea_res[annot_fgsea_res$`pathway_kind`=="cellular component"]
+mf_res <- annot_fgsea_res[annot_fgsea_res$`pathway_kind`=="molecular function"]
 
 ##plot normalised enrichment for GO terms where padj<0.1 (but indicate if padj<0.05) - can change to only bp, cc or mf
-ggplot(annot_fgsea_res, aes(reorder(pathway_name, NES), NES)) +
+ggplot(bp_res, aes(reorder(pathway_name, NES), NES)) +
+  geom_text(aes(label=round(padj, digits=3)), vjust=0, hjust=0) +
   geom_col(aes(fill=padj<0.05)) +
   coord_flip() +
-  labs(x="GO Pathway", y="FGSEA Normalized Enrichment Score") + 
+  labs(x="Biological Process GO Pathway", y="FGSEA Normalized Enrichment Score") + 
   theme_minimal()
 
