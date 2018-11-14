@@ -61,15 +61,15 @@ fwrite(sig_trans_leading_annots, "output/asw_timecourse/fgsea/sig_trans_leading_
 ##plot enrichment of GO term
 plotEnrichment(pathways[["GO:0007165"]], ranks) + labs(title="signal transduction")
 
-##find all genes in GO:regulation of transcription, DNA-templated
+##find ALL genes in GO:regulation of transcription, DNA-templated
 transcription_reg_genes <- go_term_table[go_term_table$accessions == "GO:0006355"]
 transcr_reg_annots <- merge(x = transcription_reg_genes, y = trinotate_report, by.x = "gene_id", by.y="#gene_id", all.x = TRUE, all.y = FALSE)
 fwrite(transcr_reg_annots, "output/asw_timecourse/fgsea/transcription_reg_genes.csv")
 
-####Core members that contribute to ES score (present in list before running sum reaches max.dev. from 0)
+####find CORE members that contribute to ES score (present in list before running sum reaches max.dev. from 0)
 trans_reg_res <- fgsea_res[fgsea_res$pathway == "GO:0006355",]
 trans_reg_leading_edge <- data.frame(trans_reg_res$leadingEdge)
-setnames(trans_reg_leading_edge, old=c("c..TRINITY_DN3097_c0_g1....TRINITY_DN9804_c0_g1....TRINITY_DN12984_c0_g1..."), new=c("gene_id"))
+setnames(trans_reg_leading_edge, old=c("c..TRINITY_DN3621_c0_g2....TRINITY_DN4127_c4_g1....TRINITY_DN4199_c0_g1..."), new=c("gene_id"))
 trans_leading_annots <- merge(trans_reg_leading_edge, trinotate_report, by.x="gene_id", by.y="#gene_id")
 fwrite(trans_leading_annots, "output/asw_timecourse/fgsea/trans_reg_leading_edge_annots.csv")
 ##plot enrichment of GO term
