@@ -45,4 +45,3 @@ ggplot(bp_res, aes(reorder(pathway_name, NES), NES)) +
   coord_flip() +
   labs(x="Biological Process GO Pathway", y="FGSEA Normalized Enrichment Score") + 
   theme_minimal()
-

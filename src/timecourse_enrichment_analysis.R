@@ -55,7 +55,7 @@ fwrite(sig_trans_annots, "output/asw_timecourse/fgsea/signal_transduction_genes.
 ####Core members that contribute to ES score (present in list before running sum reaches max.dev. from 0)
 sig_trans_res <- fgsea_res[fgsea_res$pathway == "GO:0007165",]
 sig_trans_leading_edge <- data.frame(sig_trans_res$leadingEdge)
-setnames(sig_trans_leading_edge, old=c("c..TRINITY_DN338_c0_g1....TRINITY_DN8216_c0_g1....TRINITY_DN6471_c0_g1..."), new=c("gene_id"))
+setnames(sig_trans_leading_edge, old=c("c..TRINITY_DN436_c0_g1....TRINITY_DN8214_c0_g1....TRINITY_DN3623_c0_g1..."), new=c("gene_id"))
 sig_trans_leading_annots <- merge(sig_trans_leading_edge, trinotate_report, by.x="gene_id", by.y="#gene_id")
 fwrite(sig_trans_leading_annots, "output/asw_timecourse/fgsea/sig_trans_leading_edge_annots.csv")
 ##plot enrichment of GO term
