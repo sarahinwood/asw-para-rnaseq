@@ -48,31 +48,8 @@ fwrite(ordered_sig_res_group_table, "output/exposed/deseq2/exposed_analysis_sig_
 ##Sub in any gene of interest to plot counts  
 plotCounts(dds_group, "TRINITY_DN2391_c0_g3", intgroup = c("group"))
 
-##better volcano plot
-EnhancedVolcano(ordered_res_group_table, x="log2FoldChange", y="padj", lab="", transcriptPointSize = 3)
-  
 ##volcano plot
-#setting threshold for padj
-alpha <- 0.05
-cols <- densCols(ordered_res_group_table$log2FoldChange, -log10(ordered_res_group_table$padj), colramp = colorRampPalette(brewer.pal(4, "Greys")[c(3,4)]))
-plot(ordered_res_group_table$log2FoldChange, -log10(ordered_res_group_table$padj), col="black", panel.first=grid(),
-     main=expression(paste("DESeq2 results for ", italic("L. bonariensis"), " exposed to ", italic("M. hyperodae"))), xlab=expression(paste("Log"[2],"Fold Change")), ylab=expression(paste("-Log"[10]," (adjusted P-value)")),
-     pch=1, cex=1)
-with(subset(ordered_res_group_table, padj<0.05 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(padj), pch=1, col="green4", cex=1))
-with(subset(ordered_res_group_table, padj<0.05 & abs(log2FoldChange)<2), points(log2FoldChange, -log10(padj), pch=1, col="blue", cex=1))
-with(subset(ordered_res_group_table, padj>0.05 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(padj), pch=1, col="red", cex=1))
-abline(v=0)
-abline(v=c(-1,1), col="black")
-abline(h=-log10(alpha), col="black")
-##adds rowname label to points on graph of significance
-gn.selected <- abs(ordered_res_group_table$log2FoldChange) > 2.5 & ordered_res_group_table$padj < alpha 
-text(ordered_res_group_table$log2FoldChange[gn.selected],
-     -log10(ordered_res_group_table$padj)[gn.selected],
-     lab=rownames(ordered_res_group_table)[gn.selected ], cex=0.2)
-
-
-with(subset(ordered_res_group_table, padj<0.05 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(padj), pch=20, col="green", cex=0.5))
-
+EnhancedVolcano(ordered_res_group_table, x="log2FoldChange", y="padj", lab="", transcriptPointSize = 3)
 
   ##read in annotated transcriptome
 trinotate_report <- fread("data/trinotate_annotation_report.txt")
