@@ -3,6 +3,7 @@ library("data.table")
 library("DESeq2")
 library("ggplot2")
 library("RColorBrewer")
+library("EnhancedVolcano")
 
 gene2tx <- fread("data/Trinity.fasta.gene_trans_map", header = FALSE)
 tx2gene <- data.frame(gene2tx[, .(V2, V1)])
@@ -46,7 +47,7 @@ ordered_sig_res_group_table <- subset(ordered_res_group_table, padj < 0.05)
 fwrite(ordered_sig_res_group_table, "output/exposed/deseq2/exposed_analysis_sig_degs.csv", col.names = TRUE, row.names = FALSE)
 
 ##Sub in any gene of interest to plot counts  
-plotCounts(dds_group, "TRINITY_DN2391_c0_g3", intgroup = c("group"))
+plotCounts(dds_group, "TRINITY_DN23612_c0_g2", intgroup = c("group"), main="Uncharacterised Protein G2, Pfam: Bro-N")
 
 ##volcano plot
 EnhancedVolcano(ordered_res_group_table, x="log2FoldChange", y="padj", lab="", transcriptPointSize = 3)

@@ -2,6 +2,7 @@ library("DESeq2")
 library("data.table")
 library("ggplot2")
 
+sample_data <- fread("data/full_sample_key.csv")
 ##read in dds saved in previous script
 dds <- readRDS("output/exposed/deseq2/dds.rds")
 dds_group <- readRDS("output/exposed/deseq2/dds_group.rds")
@@ -23,6 +24,9 @@ pc <- prcomp(t(vst_asssay), center = TRUE, scale = TRUE)
 pc_wide <- data.table(pc$x, keep.rownames = TRUE)
 pc_pd <- melt(pc_wide)
 fwrite(pc_pd, "output/vst_pca_plot_data.csv")
+
+pc_pd_sample_data <- merge(pc_pd, sample_data, by.x="rn", by.y="Sample_name")
+
 ##plot pcs
-ggplot(pc_pd, aes(x=rn, y=value, colour=rn))+
+ggplot(pc_pd_sample_data, aes(x=rn, y=value, colour=Treatment, shape=Tissue))+
   facet_wrap(~variable)+geom_point()+theme(axis.text.x=element_text(angle = 90))
