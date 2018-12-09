@@ -74,18 +74,18 @@ rule target:
     input:
      expand('output/bbduk_trim/{sample}_r1.fq.gz', sample = all_samples),
      expand('output/bbduk_trim/{sample}_r2.fq.gz', sample = all_samples),
-     expand('output/salmon/asw/{sample}_quant/quant.sf', sample = all_samples)
+     expand('output/salmon/{sample}_quant/quant.sf', sample = all_samples)
 
 rule asw_salmon_quant:
     input:
-        index_output = 'output/salmon/asw/transcripts_index/hash.bin',
+        index_output = 'output/salmon/transcripts_index/hash.bin',
         left = 'output/bbduk_trim/{sample}_r1.fq.gz',
         right = 'output/bbduk_trim/{sample}_r2.fq.gz'
     output:
-        'output/salmon/asw/{sample}_quant/quant.sf'
+        'output/salmon/{sample}_quant/quant.sf'
     params:
-        index_outdir = 'output/salmon/asw/transcripts_index',
-        outdir = 'output/salmon/asw/{sample}_quant'
+        index_outdir = 'output/salmon/transcripts_index',
+        outdir = 'output/salmon/{sample}_quant'
     threads:
         20
     singularity:
@@ -96,6 +96,7 @@ rule asw_salmon_quant:
         'salmon quant '
         '-i {params.index_outdir} '
         '-l ISR '
+        '--dumpEq '
         '-1 {input.left} '
         '-2 {input.right} '
         '-o {params.outdir} '
@@ -106,7 +107,7 @@ rule asw_salmon_index:
     input:
         transcriptome_length_filtered = 'data/isoforms_by_length.fasta'
     output:
-        'output/salmon/asw/transcripts_index/hash.bin'
+        'output/salmon/transcripts_index/hash.bin'
     params:
         outdir = 'output/salmon/asw/transcripts_index'
     threads:
