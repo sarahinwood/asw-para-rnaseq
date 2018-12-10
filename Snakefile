@@ -74,7 +74,31 @@ rule target:
     input:
      expand('output/bbduk_trim/{sample}_r1.fq.gz', sample = all_samples),
      expand('output/bbduk_trim/{sample}_r2.fq.gz', sample = all_samples),
-     expand('output/salmon/{sample}_quant/quant.sf', sample = all_samples)
+     expand('output/salmon/{sample}_quant/quant.sf', sample = all_samples),
+     'output/corset/clusters.txt'
+
+rule corset:
+    input:
+        salmon_eq = expand('output/salmon/{sample}_quant/aux_info/eq_classes.txt', sample=all_samples)
+    output:
+        'output/corset/clusters.txt',
+        'output/corset/counts.txt'
+    params:
+        wd = 'output/corset',
+        corset = resolve_path('bin/corset/corset'),
+        input = resolve_path('output/salmon/*_quant/aux_info/eq_classes.txt')
+    threads:
+        20
+    log:
+        str(pathlib2.Path(resolve_path('output/logs/'),
+                            'corset.log'))
+    shell:
+        'cd {params.wd} || exit 1 ; '
+        '{params.corset} '
+        '-g 1,2,3,4,5,1,2,3,4,5,6,1,2,3,4,5,6 '
+        '-i salmon_eq_classes '
+        '{params.input} '
+        '&>{log}'
 
 rule asw_salmon_quant:
     input:
@@ -82,7 +106,8 @@ rule asw_salmon_quant:
         left = 'output/bbduk_trim/{sample}_r1.fq.gz',
         right = 'output/bbduk_trim/{sample}_r2.fq.gz'
     output:
-        'output/salmon/{sample}_quant/quant.sf'
+        'output/salmon/{sample}_quant/quant.sf',
+        'output/salmon/{sample}_quant/aux_info/eq_classes.txt'
     params:
         index_outdir = 'output/salmon/transcripts_index',
         outdir = 'output/salmon/{sample}_quant'
@@ -109,7 +134,7 @@ rule asw_salmon_index:
     output:
         'output/salmon/transcripts_index/hash.bin'
     params:
-        outdir = 'output/salmon/asw/transcripts_index'
+        outdir = 'output/salmon/transcripts_index'
     threads:
         20
     singularity:
