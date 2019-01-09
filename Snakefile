@@ -74,7 +74,32 @@ rule target:
     input:
      expand('output/bbduk_trim/{sample}_r1.fq.gz', sample = all_samples),
      expand('output/bbduk_trim/{sample}_r2.fq.gz', sample = all_samples),
-     expand('output/salmon/{sample}_quant/quant.sf', sample = all_samples)
+     expand('output/salmon/{sample}_quant/quant.sf', sample = all_samples),
+     'output/corset/clusters.txt'
+
+rule corset:
+    input:
+        salmon_eq = expand('output/salmon/{sample}_quant/aux_info/eq_classes.txt', sample=all_samples)
+    output:
+        'output/corset/clusters.txt',
+        'output/corset/counts.txt'
+    params:
+        wd = 'output/corset',
+        corset = resolve_path('bin/corset/corset'),
+        input = resolve_path('output/salmon/*_quant/aux_info/eq_classes.txt')
+    threads:
+        20
+    log:
+        str(pathlib2.Path(resolve_path('output/logs/salmon/'),
+                            'corset.log'))
+    shell:
+        'cd {params.wd} || exit 1 ; '
+        '{params.corset} '
+        '-g 1,2,3,4,5,1,2,3,4,5,6,1,2,3,4,5,6 '
+        '-n L1_2h_A_non-purified-replacement,L1_4h_A,L1_30m_A,L1_Ex_H,L1_NC_A,L2_2h_A,L2_4h_A,L2_30m_A,L2_Ex_H,L2_NC_A,L2_NC_H,R1_2h_A,R1_4h_A,R1_30m_A,R1_Ex_H,R1_NC_A,R1_NC_H '
+        '-i salmon_eq_classes '
+        '{params.input} '
+        '&>{log}'
 
 rule asw_salmon_quant:
     input:
@@ -82,7 +107,9 @@ rule asw_salmon_quant:
         left = 'output/bbduk_trim/{sample}_r1.fq.gz',
         right = 'output/bbduk_trim/{sample}_r2.fq.gz'
     output:
-        'output/salmon/{sample}_quant/quant.sf'
+        quant = 'output/salmon/{sample}_quant/quant.sf',
+        eq = 'output/salmon/{sample}_quant/aux_info/eq_classes.txt',
+        unmapped = 'output/salmon/{sample}_quant/aux_info/unmapped_names.txt'
     params:
         index_outdir = 'output/salmon/transcripts_index',
         outdir = 'output/salmon/{sample}_quant'
@@ -91,7 +118,7 @@ rule asw_salmon_quant:
     singularity:
         salmon_container
     log:
-        'output/logs/asw_salmon_quant_{sample}.log'
+        'output/logs/salmon/asw_salmon_quant_{sample}.log'
     shell:
         'salmon quant '
         '-i {params.index_outdir} '
@@ -100,6 +127,7 @@ rule asw_salmon_quant:
         '-1 {input.left} '
         '-2 {input.right} '
         '-o {params.outdir} '
+        '--writeUnmappedNames '
         '-p {threads} '
         '&> {log}'
 
@@ -109,7 +137,7 @@ rule asw_salmon_index:
     output:
         'output/salmon/transcripts_index/hash.bin'
     params:
-        outdir = 'output/salmon/asw/transcripts_index'
+        outdir = 'output/salmon/transcripts_index'
     threads:
         20
     singularity:
