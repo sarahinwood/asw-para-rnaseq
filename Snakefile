@@ -75,6 +75,8 @@ rule target:
      expand('output/bbduk_trim/{sample}_r1.fq.gz', sample = all_samples),
      expand('output/bbduk_trim/{sample}_r2.fq.gz', sample = all_samples),
      expand('output/salmon/{sample}_quant/quant.sf', sample = all_samples),
+     expand('output/unmapped/unmapped_names/fixed_names_{sample}.txt', sample = all_samples),
+     expand('output/unmapped/filtered_unmapped/{sample}_r1.fq.gz', sample= all_samples),
      'output/corset/clusters.txt'
 
 rule corset:
@@ -100,6 +102,44 @@ rule corset:
         '-i salmon_eq_classes '
         '{params.input} '
         '&>{log}'
+
+rule filter_unmapped_reads:
+    input:
+        r1 = 'output/bbduk_trim/{sample}_r1.fq.gz',
+        r2 = 'output/bbduk_trim/{sample}_r2.fq.gz',
+        unmapped_names = 'output/unmapped/unmapped_names/fixed_names_{sample}.txt'
+    output:
+        fil_r1 = 'output/unmapped/filtered_unmapped/{sample}_r1.fq.gz',
+        fil_r2 = 'output/unmapped/filtered_unmapped/{sample}_r2.fq.gz'
+    singularity:
+        bbduk_container
+    threads:
+        20
+    log:
+        'output/logs/filter_unmapped/filter_unmapped_reads_{sample}.log'
+    shell:
+        'filterbyname.sh '
+        'in={input.r1} '
+        'in2={input.r2} '
+        'include=t '
+        'names={input.unmapped_names} '
+        'out={output.fil_r1} '
+        'out2={output.fil_r2} '
+        '&> {log}'
+
+rule fix_unmapped_read_names:
+    input:
+        unmapped_names = 'output/salmon/{sample}_quant/aux_info/unmapped_names.txt'
+    output:
+        fixed_names = 'output/unmapped/unmapped_names/fixed_names_{sample}.txt'
+    singularity:
+        'shub://TomHarrop/singularity-containers:r_3.5.0'
+    threads:
+        20
+    log:
+        'output/logs/r/fix_names_{sample}.log'
+    script:
+        'src/fix_unmapped_read_names.R'
 
 rule asw_salmon_quant:
     input:
