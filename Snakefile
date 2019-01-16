@@ -72,12 +72,8 @@ all_samples = sorted(set(sample_key['Sample_name']))
 
 rule target:
     input:
-     expand('output/bbduk_trim/{sample}_r1.fq.gz', sample = all_samples),
-     expand('output/bbduk_trim/{sample}_r2.fq.gz', sample = all_samples),
-     expand('output/salmon/{sample}_quant/quant.sf', sample = all_samples),
-     expand('output/unmapped/unmapped_names/fixed_names_{sample}.txt', sample = all_samples),
-     expand('output/unmapped/filtered_unmapped/{sample}_r1.fq.gz', sample= all_samples),
-     'output/corset/clusters.txt'
+     expand('output/asw_salmon/{sample}_quant/quant.sf', sample = all_samples)
+     ##'output/corset/clusters.txt' - trial without corset
 
 rule corset:
     input:
@@ -103,56 +99,17 @@ rule corset:
         '{params.input} '
         '&>{log}'
 
-rule filter_unmapped_reads:
-    input:
-        r1 = 'output/bbduk_trim/{sample}_r1.fq.gz',
-        r2 = 'output/bbduk_trim/{sample}_r2.fq.gz',
-        unmapped_names = 'output/unmapped/unmapped_names/fixed_names_{sample}.txt'
-    output:
-        fil_r1 = 'output/unmapped/filtered_unmapped/{sample}_r1.fq.gz',
-        fil_r2 = 'output/unmapped/filtered_unmapped/{sample}_r2.fq.gz'
-    singularity:
-        bbduk_container
-    threads:
-        20
-    log:
-        'output/logs/filter_unmapped/filter_unmapped_reads_{sample}.log'
-    shell:
-        'filterbyname.sh '
-        'in={input.r1} '
-        'in2={input.r2} '
-        'include=t '
-        'names={input.unmapped_names} '
-        'out={output.fil_r1} '
-        'out2={output.fil_r2} '
-        '&> {log}'
-
-rule fix_unmapped_read_names:
-    input:
-        unmapped_names = 'output/salmon/{sample}_quant/aux_info/unmapped_names.txt'
-    output:
-        fixed_names = 'output/unmapped/unmapped_names/fixed_names_{sample}.txt'
-    singularity:
-        'shub://TomHarrop/singularity-containers:r_3.5.0'
-    threads:
-        20
-    log:
-        'output/logs/r/fix_names_{sample}.log'
-    script:
-        'src/fix_unmapped_read_names.R'
-
 rule asw_salmon_quant:
     input:
-        index_output = 'output/salmon/transcripts_index/hash.bin',
-        left = 'output/bbduk_trim/{sample}_r1.fq.gz',
-        right = 'output/bbduk_trim/{sample}_r2.fq.gz'
+        index_output = 'output/asw_salmon/transcripts_index/hash.bin',
+        left = 'output/mh_unmapped/filtered_unmapped/{sample}_r1.fq.gz',
+        right = 'output/mh_unmapped/filtered_unmapped/{sample}_r2.fq.gz'
     output:
-        quant = 'output/salmon/{sample}_quant/quant.sf',
-        eq = 'output/salmon/{sample}_quant/aux_info/eq_classes.txt',
-        unmapped = 'output/salmon/{sample}_quant/aux_info/unmapped_names.txt'
+        quant = 'output/asw_salmon/{sample}_quant/quant.sf',
+        eq = 'output/asw_salmon/{sample}_quant/aux_info/eq_classes.txt',
     params:
-        index_outdir = 'output/salmon/transcripts_index',
-        outdir = 'output/salmon/{sample}_quant'
+        index_outdir = 'output/asw_salmon/transcripts_index',
+        outdir = 'output/asw_salmon/{sample}_quant'
     threads:
         20
     singularity:
@@ -173,17 +130,103 @@ rule asw_salmon_quant:
 
 rule asw_salmon_index:
     input:
-        transcriptome_length_filtered = 'data/isoforms_by_length.fasta'
+        transcriptome_length_filtered = 'data/asw_transcriptome/isoforms_by_length.fasta'
     output:
-        'output/salmon/transcripts_index/hash.bin'
+        'output/asw_salmon/transcripts_index/hash.bin'
     params:
-        outdir = 'output/salmon/transcripts_index'
+        outdir = 'output/asw_salmon/transcripts_index'
     threads:
         20
     singularity:
         salmon_container
     log:
         'output/logs/asw_salmon_index.log'
+    shell:
+        'salmon index '
+        '-t {input.transcriptome_length_filtered} '
+        '-i {params.outdir} '
+        '-p {threads} '
+        '&> {log}'
+
+rule filter_unmapped_reads:
+    input:
+        r1 = 'output/bbduk_trim/{sample}_r1.fq.gz',
+        r2 = 'output/bbduk_trim/{sample}_r2.fq.gz',
+        unmapped_names = 'output/mh_unmapped/mh_unmapped_names/fixed_names_{sample}.txt'
+    output:
+        fil_r1 = 'output/mh_unmapped/filtered_unmapped/{sample}_r1.fq.gz',
+        fil_r2 = 'output/mh_unmapped/filtered_unmapped/{sample}_r2.fq.gz'
+    singularity:
+        bbduk_container
+    threads:
+        20
+    log:
+        'output/logs/mh_filter_unmapped/mh_filter_unmapped_reads_{sample}.log'
+    shell:
+        'filterbyname.sh '
+        'in={input.r1} '
+        'in2={input.r2} '
+        'include=t '
+        'names={input.unmapped_names} '
+        'out={output.fil_r1} '
+        'out2={output.fil_r2} '
+        '&> {log}'
+
+rule fix_unmapped_read_names:
+    input:
+        unmapped_names = 'output/mh_filtering_salmon/{sample}_quant/aux_info/unmapped_names.txt'
+    output:
+        fixed_names = 'output/mh_unmapped/mh_unmapped_names/fixed_names_{sample}.txt'
+    singularity:
+        'shub://TomHarrop/singularity-containers:r_3.5.0'
+    threads:
+        20
+    log:
+        'output/logs/r/fix_names_{sample}.log'
+    script:
+        'src/fix_unmapped_read_names.R'
+
+rule mh_filtering_salmon_quant:
+    input:
+        index_output = 'output/mh_filtering_salmon/transcripts_index/hash.bin',
+        left = 'output/bbduk_trim/{sample}_r1.fq.gz',
+        right = 'output/bbduk_trim/{sample}_r2.fq.gz'
+    output:
+        quant = 'output/mh_filtering_salmon/{sample}_quant/quant.sf',
+        unmapped = 'output/mh_filtering_salmon/{sample}_quant/aux_info/unmapped_names.txt'
+    params:
+        index_outdir = 'output/mh_filtering_salmon/transcripts_index',
+        outdir = 'output/mh_filtering_salmon/{sample}_quant'
+    threads:
+        20
+    singularity:
+        salmon_container
+    log:
+        'output/logs/salmon/mh_filtering_salmon_quant_{sample}.log'
+    shell:
+        'salmon quant '
+        '-i {params.index_outdir} '
+        '-l ISR '
+        '-1 {input.left} '
+        '-2 {input.right} '
+        '-o {params.outdir} '
+        '--writeUnmappedNames '
+        '-p {threads} '
+        '&> {log}'
+
+rule mh_salmon_index:
+    input:
+        transcriptome_length_filtered = 'data/mh_isoforms_by_length.fasta'
+    output:
+        'output/mh_filtering_salmon/transcripts_index/hash.bin'
+    params:
+        outdir = 'output/mh_filtering_salmon/transcripts_index'
+    threads:
+        20
+    singularity:
+        salmon_container
+    log:
+        'output/logs/mh_filtering_salmon_index.log'
     shell:
         'salmon index '
         '-t {input.transcriptome_length_filtered} '
