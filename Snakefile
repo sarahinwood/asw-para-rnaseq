@@ -88,7 +88,7 @@ rule corset:
     threads:
         20
     log:
-        str(pathlib2.Path(resolve_path('output/logs/salmon/'),
+        str(pathlib2.Path(resolve_path('output/logs/'),
                             'corset.log'))
     shell:
         'cd {params.wd} || exit 1 ; '

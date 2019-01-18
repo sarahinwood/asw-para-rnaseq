@@ -4,19 +4,20 @@ library("DESeq2")
 library("ggplot2")
 library("Biostrings")
 library("dplyr")
+library("VennDiagram")
 
-gene2tx <- fread("data/Trinity.fasta.gene_trans_map", header = FALSE)
+gene2tx <- fread("data/asw_transcriptome/Trinity.fasta.gene_trans_map", header = FALSE)
 tx2gene <- data.frame(gene2tx[, .(V2, V1)])
 
   ##Find all salmon quant files
-quant_files <- list.files(path="output/salmon", pattern = "quant.sf", full.names=TRUE, recursive = TRUE)
+quant_files <- list.files(path="output/asw_salmon", pattern = "quant.sf", full.names=TRUE, recursive = TRUE)
   ##assign names to quant files from folder name
 names(quant_files) <- gsub(".*/(.+)_quant/.*", "\\1", quant_files)
   ##import the salmon quant files (tx2gene links transcript ID to Gene ID - required for gene-level summarisation... 
   ##for methods that only provide transcript level estimates e.g. salmon)
 txi <- tximport(quant_files, type = "salmon", tx2gene = tx2gene, dropInfReps=TRUE)
   ##Import table describing samples
-sample_data <- fread("data/full_sample_key.csv")
+sample_data <- fread("data/sample_key.csv")
 setkey(sample_data, Sample_name)
 
   ##Create dds object and link to sample data
@@ -54,11 +55,20 @@ ordered_sig_degs <- sig_genes[order(sig_genes$padj),]
 ordered_degs_table <- data.table(data.frame(ordered_sig_degs), keep.rownames = TRUE)
 fwrite(ordered_degs_table, "output/asw_timecourse/deseq2/timecourse_analysis_sig_degs.csv")
 
+  ##compare to pre-filtering
+nf_sig_degs <- fread("nf_output/asw_timecourse/deseq2/timecourse_analysis_sig_degs.csv")
+nf_sig_ids <- nf_sig_degs$rn
+f_sig_ids <- ordered_degs_table$rn
+Set1 <- RColorBrewer::brewer.pal(3, "Set1")
+vd <- venn.diagram(x = list("Non-Filtered DEGs"=nf_sig_ids, "Filtered DEGs"=f_sig_ids), filename=NULL, alpha=0.5, cex = 1, cat.cex=1, lwd=1, label=TRUE)
+grid.newpage()
+grid.draw(vd)
+
   ##plot counts for genes of interest, sub in name
 plotCounts(dds_abdo, "TRINITY_DN13642_c0_g1", intgroup = c("Treatment", "Wasp_Location"))
 
   ##read in annotated transcriptome
-trinotate_report <- fread("data/trinotate_annotation_report.txt")
+trinotate_report <- fread("data/asw_transcriptome/trinotate_annotation_report.txt")
 setnames(ordered_degs_table, old=c("rn"), new=c("#gene_id"))
   ##merge list of sig genes with annotations
 sig_w_annots <- merge(ordered_degs_table, trinotate_report, by.x="#gene_id", by.y="#gene_id")

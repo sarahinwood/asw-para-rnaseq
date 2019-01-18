@@ -2,7 +2,7 @@ library('data.table')
 library('fgsea')
 library('ggplot2')
 
-trinotate_report <- fread("data/trinotate_annotation_report.txt", na.strings = ".")
+trinotate_report <- fread("data/asw_transcriptome/trinotate_annotation_report.txt", na.strings = ".")
 gene_ids <- trinotate_report[!is.na(gene_ontology_pfam), unique(`#gene_id`)]
 res_group <- fread("output/exposed/deseq2/res_group.csv")
 
@@ -27,7 +27,6 @@ names(ranks) <- res_group[!is.na(stat), rn]
 
 fgsea_res <- fgsea(pathways, ranks, nperm = 10000)
 sorted_fgsea_res <- fgsea_res[order(fgsea_res$padj)]
-##46 enriched GO terms -> using blast GO instead of pfam GO gives 0 terms padj<0.05, and 569 padj<0.1
 sum(sorted_fgsea_res$padj<0.05)
 fwrite(sorted_fgsea_res, "output/exposed/fgsea/fgsea_exposed_GOtermpfam_deseqstat_res.csv")
 
@@ -39,9 +38,9 @@ cc_res <- annot_fgsea_res[annot_fgsea_res$`pathway_kind`=="cellular component"]
 mf_res <- annot_fgsea_res[annot_fgsea_res$`pathway_kind`=="molecular function"]
 
 ##plot normalised enrichment for GO terms where padj<0.1 (but indicate if padj<0.05) - can change to only bp, cc or mf
-ggplot(bp_res, aes(reorder(pathway_name, NES), NES)) +
+ggplot(cc_res, aes(reorder(pathway_name, NES), NES)) +
   geom_text(aes(label=round(padj, digits=3)), vjust=0, hjust=0) +
   geom_col(aes(fill=padj<0.05)) +
   coord_flip() +
-  labs(x="Biological Process GO Pathway", y="FGSEA Normalized Enrichment Score") + 
+  labs(x="Cellular Component GO Pathway", y="FGSEA Normalized Enrichment Score") + 
   theme_minimal()

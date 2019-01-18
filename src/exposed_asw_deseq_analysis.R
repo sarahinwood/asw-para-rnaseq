@@ -5,18 +5,18 @@ library("ggplot2")
 library("RColorBrewer")
 library("EnhancedVolcano")
 
-gene2tx <- fread("data/Trinity.fasta.gene_trans_map", header = FALSE)
+gene2tx <- fread("data/asw_transcriptome/Trinity.fasta.gene_trans_map", header = FALSE)
 tx2gene <- data.frame(gene2tx[, .(V2, V1)])
 
   ##Find all salmon quant files
-quant_files <- list.files(path="output/salmon/asw", pattern = "quant.sf", full.names=TRUE, recursive = TRUE)
+quant_files <- list.files(path="output/asw_salmon/", pattern = "quant.sf", full.names=TRUE, recursive = TRUE)
   ##assign names to quant files from folder name
 names(quant_files) <- gsub(".*/(.+)_quant/.*", "\\1", quant_files)
   ##import the salmon quant files (tx2gene links transcript ID to Gene ID - required for gene-level summarisation... 
   ##for methods that only provide transcript level estimates e.g. salmon)
 txi <- tximport(quant_files, type = "salmon", tx2gene = tx2gene, dropInfReps=TRUE)
   ##Import table describing samples
-sample_data <- fread("data/full_sample_key.csv")
+sample_data <- fread("data/sample_key.csv")
 setkey(sample_data, Sample_name)
 
   ##create dds object and link to sample data  
@@ -53,7 +53,7 @@ plotCounts(dds_group, "TRINITY_DN23612_c0_g2", intgroup = c("group"), main="Unch
 EnhancedVolcano(ordered_res_group_table, x="log2FoldChange", y="padj", lab="", transcriptPointSize = 3)
 
   ##read in annotated transcriptome
-trinotate_report <- fread("data/trinotate_annotation_report.txt")
+trinotate_report <- fread("data/asw_transcriptome/trinotate_annotation_report.txt")
 setnames(ordered_sig_res_group_table, old=c("rn"), new=c("#gene_id"))
   ##merge list of sig genes with annotations
 sig_w_annots <- merge (ordered_sig_res_group_table, trinotate_report, by.x="#gene_id", by.y="#gene_id")
