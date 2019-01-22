@@ -2,7 +2,7 @@ library("DESeq2")
 library("data.table")
 library("ggplot2")
 
-sample_data <- fread("data/full_sample_key.csv")
+sample_data <- fread("data/sample_key.csv")
 ##read in dds saved in previous script
 dds <- readRDS("output/exposed/deseq2/dds.rds")
 dds_group <- readRDS("output/exposed/deseq2/dds_group.rds")

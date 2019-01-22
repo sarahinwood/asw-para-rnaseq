@@ -36,6 +36,7 @@ dds_group <- DESeq(dds_group)
 saveRDS(dds_group, file = "output/exposed/deseq2/dds_group.rds")
 
 resultsNames(dds_group)
+
   ##Make table of results for exposed vs control heads
 res_group <- results(dds_group, contrast = c("group", "Head_Exposed", "Head_Control"), lfcThreshold = 1, alpha = 0.1)
   ##Order based of padj
@@ -45,10 +46,8 @@ ordered_res_group_table <- data.table(data.frame(ordered_res_group), keep.rownam
 fwrite(ordered_res_group_table, "output/exposed/deseq2/res_group.csv")
 ordered_sig_res_group_table <- subset(ordered_res_group_table, padj < 0.05)
 fwrite(ordered_sig_res_group_table, "output/exposed/deseq2/exposed_analysis_sig_degs.csv", col.names = TRUE, row.names = FALSE)
-
 ##Sub in any gene of interest to plot counts  
-plotCounts(dds_group, "TRINITY_DN23612_c0_g2", intgroup = c("group"), main="Uncharacterised Protein G2, Pfam: Bro-N")
-
+plotCounts(dds_group, "TRINITY_DN35519_c0_g1", intgroup = c("group"), main="..")
 ##volcano plot
 EnhancedVolcano(ordered_res_group_table, x="log2FoldChange", y="padj", lab="", transcriptPointSize = 3)
 
@@ -90,7 +89,7 @@ fwrite(sig_blastx_trinotate_annots, "output/exposed/deseq2/degs_trinotate_blastx
 ##filter out genes in blastx annotation column that contain "uncharacterized" or "hypothetical"
 unchar_or_hypo_annots <- dplyr::filter(sig_blastx_trinotate_annots, grepl('uncharacterized|hypothetical', annotation))
 ##filter out genes with no manual annotation OR trinotate blastx annotation
-no_manual_annot <- all_annots_degs %>% filter(is.na(annotation))
+no_manual_annot <- sig_blastx_trinotate_annots %>% filter(is.na(annotation))
 no_annot <- no_manual_annot[no_manual_annot$sprot_Top_BLASTX_hit == ".",]
 ##merge list of genes with no annot OR hypothetical/uncharacterised and save for interproscan
 unchar_hypo_ids <- data.table(unchar_or_hypo_annots$transcript_id)

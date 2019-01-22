@@ -39,15 +39,16 @@ expression_matrix <- as.matrix(data.frame(mean_vst_wide, row.names = "rn"))
 pheno_data <- data.frame(row.names = colnames(expression_matrix), treatment = colnames(expression_matrix))
 vg <- ExpressionSet(assayData = expression_matrix[sig_gene_names,], phenoData = new('AnnotatedDataFrame', data = pheno_data))
 
-##run from here down on biochemcompute - can't on my laptop
+##run from here down on biochemcompute - can't on my laptop - using bioconductor singularity image
 library(Mfuzz)
+seed <- 6
 set.seed(seed)
 ##standardise expression values to have mean of 0 and st dev of 1 - necessary for mfuzz
 vg_s <- standardise(vg)
 #optimise parameters - mestimate(vg_s)?
 ##m determines influence of noise on cluster analysis - increasing m reduces the influence of genes with low membership values
 #m prevents clustering of random data
-##mestimate gave 2.96 - but don't want it this high???
+##mestimate gave 2.97 - but don't want it this high???
 m <- 2.3
 #use to determine no. clusters - Dmin = mindist between clusters, should decline slower after reaching optimal no. of clusters
 x <- Dmin(vg_s, m, crange = seq(4, 16, 2), repeats = 1)
@@ -86,12 +87,14 @@ gp <- ggplot(cluster_pd, aes(x = time,
   facet_wrap(~ cluster) +
   geom_line()
 
-ggsave("output/asw_timecourse/deseq2/clusters.pdf", gp)
-fwrite(cluster_pd, "output/asw_timecourse/deseq2/gene_clusters.csv")
+ggsave("output/asw_timecourse/mfuzz/clusters.pdf", gp)
+fwrite(cluster_pd, "output/asw_timecourse/mfuzz/gene_clusters.csv")
 
 ##Can do from here on laptop - can play with and change m and cluster #
 
-##to add annotations to clusters - back on my laptop
+##add trinotate annot.s to all DEGs in other script then pull out clustered genes here
+
+##to add manual blast annotations to clusters - back on my laptop
 deg_annotations <- fread("output/asw_timecourse/no_annot/degs_trinotate_blastx_annots.csv")
 clusters <- fread("output/asw_timecourse/deseq2/gene_clusters.csv")
 cluster_annotations <- merge(clusters, deg_annotations, by.x="NAME", by.y="#gene_id")
