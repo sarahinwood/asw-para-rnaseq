@@ -44,3 +44,6 @@ ggplot(cc_res, aes(reorder(pathway_name, NES), NES)) +
   coord_flip() +
   labs(x="Cellular Component GO Pathway", y="FGSEA Normalized Enrichment Score") + 
   theme_minimal()
+
+##plot enrichment of GO term
+plotEnrichment(pathways[["GO:0019013"]], ranks) + labs(title="viral nucleocapsid")

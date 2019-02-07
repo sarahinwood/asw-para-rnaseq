@@ -47,7 +47,7 @@ fwrite(ordered_sig_res_location_group_table, "output/exposed/deseq2_ru_v_linc/lo
 ##volcano plot
 EnhancedVolcano(ordered_res_location_group_table, x="log2FoldChange", y="padj", lab="", transcriptPointSize = 3)
 ##Sub in any gene of interest to plot counts  
-plotCounts(dds_location_group, "TRINITY_DN1885_c0_g1", intgroup = c("group"), main="..")
+plotCounts(dds_location_group, "TRINITY_DN35519_c0_g1", intgroup = c("group"), main="bro [Trichoplusia ni granulovirus LBIV-12] (padj NA, L2FC 5.2)")
 ##read in annotated transcriptome
 trinotate_report <- fread("data/asw_transcriptome/trinotate_annotation_report.txt")
 

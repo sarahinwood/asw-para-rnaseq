@@ -47,7 +47,7 @@ fwrite(ordered_res_group_table, "output/exposed/deseq2/res_group.csv")
 ordered_sig_res_group_table <- subset(ordered_res_group_table, padj < 0.05)
 fwrite(ordered_sig_res_group_table, "output/exposed/deseq2/exposed_analysis_sig_degs.csv", col.names = TRUE, row.names = FALSE)
 ##Sub in any gene of interest to plot counts  
-plotCounts(dds_group, "TRINITY_DN35519_c0_g1", intgroup = c("group"), main="..")
+plotCounts(dds_group, "TRINITY_DN5426_c0_g1", intgroup = c("group"), main="Viral Nucleoprotein (padj 0.002, L2FC 22.85)")
 ##volcano plot
 EnhancedVolcano(ordered_res_group_table, x="log2FoldChange", y="padj", lab="", transcriptPointSize = 3)
 

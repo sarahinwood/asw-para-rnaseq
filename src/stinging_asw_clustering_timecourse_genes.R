@@ -95,11 +95,11 @@ fwrite(cluster_pd, "output/asw_timecourse/mfuzz/gene_clusters.csv")
 ##add trinotate annot.s to all DEGs in other script then pull out clustered genes here
 
 ##to add manual blast annotations to clusters - back on my laptop
-deg_annotations <- fread("output/asw_timecourse/no_annot/degs_trinotate_blastx_annots.csv")
-clusters <- fread("output/asw_timecourse/deseq2/gene_clusters.csv")
+deg_annotations <- fread("output/asw_timecourse/deseq2/degs_trinotate_blastx_annots.csv")
+clusters <- fread("output/asw_timecourse/mfuzz/gene_clusters.csv")
 cluster_annotations <- merge(clusters, deg_annotations, by.x="NAME", by.y="#gene_id")
-fwrite(cluster_annotations, "output/asw_timecourse/deseq2/raw_clusters_and_annotations.csv")
 dedup_cluster_annots <- cluster_annotations[cluster_annotations$time == "Control",]
+fwrite(dedup_cluster_annots, "output/asw_timecourse/mfuzz/clusters_trinotate_and_blastx_annots.csv")
 
 ##Read in interpro results
 interpro_results <- fread("output/asw_timecourse/interproscan/interproscan_degs.fasta.tsv", fill=TRUE)

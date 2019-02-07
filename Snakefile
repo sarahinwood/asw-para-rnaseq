@@ -73,31 +73,6 @@ all_samples = sorted(set(sample_key['Sample_name']))
 rule target:
     input:
      expand('output/asw_salmon/{sample}_quant/quant.sf', sample = all_samples)
-     ##'output/corset/clusters.txt' - trial without corset
-
-rule corset:
-    input:
-        salmon_eq = expand('output/salmon/{sample}_quant/aux_info/eq_classes.txt', sample=all_samples)
-    output:
-        'output/corset/clusters.txt',
-        'output/corset/counts.txt'
-    params:
-        wd = 'output/corset',
-        corset = resolve_path('bin/corset/corset'),
-        input = resolve_path('output/salmon/*_quant/aux_info/eq_classes.txt')
-    threads:
-        20
-    log:
-        str(pathlib2.Path(resolve_path('output/logs/'),
-                            'corset.log'))
-    shell:
-        'cd {params.wd} || exit 1 ; '
-        '{params.corset} '
-        '-g 1,2,3,4,5,1,2,3,4,5,6,1,2,3,4,5,6 '
-        '-n L1_2h_A_non-purified-replacement,L1_4h_A,L1_30m_A,L1_Ex_H,L1_NC_A,L2_2h_A,L2_4h_A,L2_30m_A,L2_Ex_H,L2_NC_A,L2_NC_H,R1_2h_A,R1_4h_A,R1_30m_A,R1_Ex_H,R1_NC_A,R1_NC_H '
-        '-i salmon_eq_classes '
-        '{params.input} '
-        '&>{log}'
 
 rule asw_salmon_quant:
     input:
@@ -186,7 +161,7 @@ rule fix_unmapped_read_names:
     script:
         'src/fix_unmapped_read_names.R'
 
-rule mh_filtering_salmon_quant:
+rule mh_filtering_salmon_quant: ##altering to make mapping more stringent - validate + factorization bins
     input:
         index_output = 'output/mh_filtering_salmon/transcripts_index/hash.bin',
         left = 'output/bbduk_trim/{sample}_r1.fq.gz',
@@ -210,6 +185,7 @@ rule mh_filtering_salmon_quant:
         '-1 {input.left} '
         '-2 {input.right} '
         '-o {params.outdir} '
+        '--quasiCoverage 0.5 '
         '--writeUnmappedNames '
         '-p {threads} '
         '&> {log}'
