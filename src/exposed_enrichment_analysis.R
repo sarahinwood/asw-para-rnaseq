@@ -6,6 +6,10 @@ trinotate_report <- fread("data/asw_transcriptome/trinotate_annotation_report.tx
 gene_ids <- trinotate_report[!is.na(gene_ontology_pfam), unique(`#gene_id`)]
 res_group <- fread("output/exposed/deseq2/res_group.csv")
 
+go_annot_list<-data.table(trinotate_report[,unique(unlist(strsplit(gene_ontology_pfam, "`")))])
+go_annot_table <- go_annot_list[,tstrsplit(V1, "^", fixed=TRUE)]
+go_annot_table<-setnames(go_annot_table, old=c("V1", "V2", "V3"), new=c("pathway", "pathway_kind", "pathway_name"))
+
 ##function to extract GO terms from annotations in transcriptome (get all unique GO terms for each gene id) --> could look at other functional annot if I want to
 EXTRACT_GO_TERMS <- function(x, trinotate_report){
   my_terms<-trinotate_report[`#gene_id`==x,unique(unlist(strsplit(gene_ontology_pfam, "`")))]
@@ -30,20 +34,22 @@ sorted_fgsea_res <- fgsea_res[order(fgsea_res$padj)]
 sum(sorted_fgsea_res$padj<0.05)
 fwrite(sorted_fgsea_res, "output/exposed/fgsea/fgsea_exposed_GOtermpfam_deseqstat_res.csv")
 
-##read in file with functions added to GO terms when padj<0.1
-annot_fgsea_res <- fread("output/exposed/fgsea/annot_fgsea_exposed_GOtermpfam_deseqstat_res.csv")
+##plot enrichment of GO term
+plotEnrichment(pathways[["GO:0098586"]], ranks) + labs(title="cellular response to virus")
+
+##subset into only sig terms and merge w/annotations
+sig_fgsea_res <- subset(sorted_fgsea_res, padj < 0.1)
+annot_sig_fgsea <- merge(sig_fgsea_res, go_annot_table, by.x="pathway", by.y="pathway", all.x=TRUE)
+fwrite(annot_sig_fgsea, "output/exposed/fgsea/sig_annot_fgsea_pfam.csv")
 ##split into 3 tables --> biological process, cellular component and molecular function
-bp_res <- annot_fgsea_res[annot_fgsea_res$`pathway_kind`=="biological process"]
-cc_res <- annot_fgsea_res[annot_fgsea_res$`pathway_kind`=="cellular component"]
-mf_res <- annot_fgsea_res[annot_fgsea_res$`pathway_kind`=="molecular function"]
+bp_res <- annot_sig_fgsea[annot_sig_fgsea$`pathway_kind`=="biological_process"]
+cc_res <- annot_sig_fgsea[annot_sig_fgsea$`pathway_kind`=="cellular_component"]
+mf_res <- annot_sig_fgsea[annot_sig_fgsea$`pathway_kind`=="molecular_function"]
 
 ##plot normalised enrichment for GO terms where padj<0.1 (but indicate if padj<0.05) - can change to only bp, cc or mf
-ggplot(cc_res, aes(reorder(pathway_name, NES), NES)) +
+ggplot(mf_res, aes(reorder(pathway_name, NES), NES)) +
   geom_text(aes(label=round(padj, digits=3)), vjust=0, hjust=0) +
   geom_col(aes(fill=padj<0.05)) +
   coord_flip() +
-  labs(x="Cellular Component GO Pathway", y="FGSEA Normalized Enrichment Score") + 
+  labs(x="Molecular Function GO Pathway", y="FGSEA Normalized Enrichment Score") + 
   theme_minimal()
-
-##plot enrichment of GO term
-plotEnrichment(pathways[["GO:0019013"]], ranks) + labs(title="viral nucleocapsid")

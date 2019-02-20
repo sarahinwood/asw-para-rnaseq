@@ -2,8 +2,9 @@ library("tximport")
 library("data.table")
 library("VennDiagram")
 
-nf_sig_degs <- fread("output/exposed/nf_deseq2/exposed_analysis_sig_degs.csv")
-f_sig_degs <- fread("output/exposed/deseq2/exposed_analysis_sig_degs.csv")
+nf_sig_degs <- fread("output/exposed/nf_deseq2/dedup_nf_only_deg_annots.csv")
+quasi_sig_degs <- fread("output/exposed/deseq2/exposed_analysis_sig_degs.csv")
+f_sig_degs <- fread("output/exposed/f_deseq2/exposed_analysis_sig_degs.csv")
 annot_f_sig_degs <- fread("output/exposed/deseq2/degs_trinotate_blastx_annots.csv")
 asw_trinotate_report <- fread("data/asw_transcriptome/trinotate_annotation_report.txt", na.strings = ".")
 asw_gene_ids <- asw_trinotate_report[!is.na(gene_ontology_pfam), unique(`#gene_id`)]
