@@ -133,12 +133,9 @@ rule rename_unmapped:
 	output:
 		fq_left = temp('output/renamed/{sample}_Unmapped_mate1.fq.gz'),
 		fq_right = temp('output/renamed/{sample}_Unmapped_mate2.fq.gz')
-	log:
-		left = 'output/logs/rename_{sample}_left.log',
-		right = 'output/logs/rename_{sample}_right.log'
 	shell:
-		'cp {input.unmapped_left} {output.fq_left} &> {log.left} & '
-		'cp {input.unmapped_right} {output.fq_right} &> {log.right} & '
+		'cp {input.unmapped_left} {output.fq_left} & '
+		'cp {input.unmapped_right} {output.fq_right} & '
 		'wait '
 
 rule star_second_pass:
