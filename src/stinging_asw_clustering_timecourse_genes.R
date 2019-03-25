@@ -114,7 +114,7 @@ fwrite(interpro_annots, "output/asw_timecourse/interproscan/interpro_description
 
 clustered_genes <- unique(clusters$NAME)
 non_clustered_genes <- data.table(setdiff(sig_gene_names, clustered_genes))
-all_annots_degs <- fread("output/asw_timecourse/no_annot/degs_trinotate_blastx_annots.csv")
+all_annots_degs <- fread("output/asw_timecourse/deseq2/degs_trinotate_blastx_annots.csv")
 non_clustered_annots <- merge(x = non_clustered_genes, all_annots_degs, by.x = "V1", by.y = "#gene_id", all.x = TRUE, all.y = FALSE)
 fwrite(non_clustered_annots, "output/asw_timecourse/deseq2/non_clustered_sig_degs_annots.csv")
 

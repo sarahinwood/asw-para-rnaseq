@@ -47,9 +47,20 @@ cc_res <- annot_sig_fgsea[annot_sig_fgsea$`pathway_kind`=="cellular_component"]
 mf_res <- annot_sig_fgsea[annot_sig_fgsea$`pathway_kind`=="molecular_function"]
 
 ##plot normalised enrichment for GO terms where padj<0.1 (but indicate if padj<0.05) - can change to only bp, cc or mf
-ggplot(mf_res, aes(reorder(pathway_name, NES), NES)) +
-  geom_text(aes(label=round(padj, digits=3)), vjust=0, hjust=0) +
+ggplot(bp_res, aes(reorder(pathway_name, NES), NES)) +
+  geom_text(aes(y= NES + 0.3*sign(NES), label=round(padj, digits=3)), vjust=0, hjust=0) +
   geom_col(aes(fill=padj<0.05)) +
   coord_flip() +
   labs(x="Molecular Function GO Pathway", y="FGSEA Normalized Enrichment Score") + 
-  theme_minimal()
+  theme_minimal()+
+  theme(axis.text.y = element_text(size=15))
+
+####find CORE members that contribute to ES score (present in list before running sum reaches max.dev. from 0)
+core_mem_res <- fgsea_res[fgsea_res$pathway == "GO:0006915",]
+term_leading_edge <- data.frame(core_mem_res$leadingEdge)
+setnames(term_leading_edge, old=c("c..TRINITY_DN37784_c0_g1....TRINITY_DN564_c4_g1.."), new=c("gene_id"))
+term_leading_annots <- merge(term_leading_edge, trinotate_report, by.x="gene_id", by.y="#gene_id")
+fwrite(term_leading_annots, "output/asw_timecourse/fgsea/trans_reg_leading_edge_annots.csv")
+##plot enrichment of GO term
+plotEnrichment(pathways[["GO:0006355"]], ranks) + labs(title="regulation of transcription, DNA-templated")
+

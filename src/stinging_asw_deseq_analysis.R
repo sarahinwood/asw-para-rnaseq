@@ -5,6 +5,7 @@ library("ggplot2")
 library("Biostrings")
 library("dplyr")
 library("VennDiagram")
+library("EnhancedVolcano")
 
 gene2tx <- fread("data/asw_transcriptome/Trinity.fasta.gene_trans_map", header = FALSE)
 tx2gene <- data.frame(gene2tx[, .(V2, V1)])
@@ -26,7 +27,8 @@ dds <- DESeqDataSetFromTximport(txi, colData = sample_data[colnames(txi$counts)]
   ##Select only abdomen samples
 dds_abdo <- dds[,dds$Tissue == "Abdomen"]
   ##convert to factors
-dds_abdo$Treatment <- factor(dds_abdo$Treatment)
+time_order <- c("Control", "m30", "m120", "m240")
+dds_abdo$Treatment <- factor(dds_abdo$Treatment, levels=time_order)
 dds_abdo$Wasp_Location <- factor(dds_abdo$Wasp_Location)
   ##add factors of ineterst to design
 design(dds_abdo) <- ~Wasp_Location+Treatment
@@ -48,6 +50,16 @@ fwrite(data.table(sig_gene_names), "output/asw_timecourse/deseq2/timecourse_sig_
 ##write list of results for all genes for FGSEA analysis
 timecourse_all <- data.table(data.frame(dds_abdo_res), keep.rownames=TRUE)
 fwrite(timecourse_all, "output/asw_timecourse/deseq2/timecourse_all_genes.csv")
+
+##volcano plot
+EnhancedVolcano(ordered_dds_abdo_res, x="log2FoldChange", y="padj", lab="", transcriptPointSize = 3)
+
+##plot expression pattern for gene
+plot_gene <- plotCounts(dds_abdo, "TRINITY_DN14139_c0_g2", 
+                        intgroup = c("Treatment"), returnData = TRUE)
+ggplot(plot_gene,
+       aes(x = Treatment, y = count)) + 
+  geom_point() + geom_smooth(se = FALSE, method = "loess") + scale_y_log10()
 
   ##Order results based of padj
 ordered_sig_degs <- sig_genes[order(sig_genes$padj),]
