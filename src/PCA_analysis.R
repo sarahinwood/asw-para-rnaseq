@@ -4,16 +4,16 @@ library("ggplot2")
 
 sample_data <- fread("data/sample_key.csv")
 ##read in dds saved in previous script
-dds <- readRDS("output/exposed/deseq2/dds.rds")
-dds_group <- readRDS("output/exposed/deseq2/dds_group.rds")
+dds <- readRDS("output/asw_timecourse/deseq2/dds.rds")
+dds_abdo <- readRDS("output/asw_timecourse/deseq2/dds_abdo.rds")
 
 ##PCA plot - first must log transform using vst (must set blind = true)
 vst <- varianceStabilizingTransformation(dds, blind=TRUE)
 ##plot PCA with first 2 dimensions to investigate sample clustering
-plotPCA(vst, intgroup=c("Treatment", "Tissue", "Wasp_Location"))
+plotPCA(vst, intgroup=c("Treatment", "Tissue", "Flow_cell"))
 
 ##pull out results from dds_group
-res_group <- results(dds_group, contrast = c("group", "Head_Exposed", "Head_Control"), lfcThreshold = 1, alpha = 0.1)
+res_group <- results(dds_abdo, alpha = 0.1)
 ##only keep genes where padj is not NA
 kept_genes <- rownames(subset(res_group, !is.na(padj)))
 ##create matrix of vst values for only genes where padj didn't = NA

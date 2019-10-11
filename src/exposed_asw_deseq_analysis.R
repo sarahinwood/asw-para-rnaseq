@@ -5,11 +5,12 @@ library("ggplot2")
 library("RColorBrewer")
 library("EnhancedVolcano")
 
+
 gene2tx <- fread("data/asw_transcriptome/Trinity.fasta.gene_trans_map", header = FALSE)
 tx2gene <- data.frame(gene2tx[, .(V2, V1)])
 
-  ##Find all salmon quant files
-quant_files <- list.files(path="output/old_asw_salmon/", pattern = "quant.sf", full.names=TRUE, recursive = TRUE)
+  ##Find all salmon quant files from salmon filtering because res. from filtering with STAR and lost bro that way
+quant_files <- list.files(path="output/asw_salmon/", pattern = "quant.sf", full.names=TRUE, recursive = TRUE)
   ##assign names to quant files from folder name
 names(quant_files) <- gsub(".*/(.+)_quant/.*", "\\1", quant_files)
   ##import the salmon quant files (tx2gene links transcript ID to Gene ID - required for gene-level summarisation... 
@@ -47,9 +48,21 @@ fwrite(ordered_res_group_table, "output/exposed/deseq2/res_group.csv")
 ordered_sig_res_group_table <- subset(ordered_res_group_table, padj < 0.05)
 fwrite(ordered_sig_res_group_table, "output/exposed/deseq2/exposed_analysis_sig_degs.csv", col.names = TRUE, row.names = FALSE)
 ##Sub in any gene of interest to plot counts  
-plotCounts(dds_group, "TRINITY_DN1684_c0_g1", intgroup = c("group"), main="Putative KilA-N domain-containing protein [Mimivirus] (padj 0.0004, L2FC 23.5)")
+plotCounts(dds_group, "TRINITY_DN1684_c0_g1", intgroup = c("group"), main="")
 ##volcano plot
 EnhancedVolcano(ordered_res_group_table, x="log2FoldChange", y="padj", lab="", transcriptPointSize = 3)
+
+##plot counts using ggplot, coloured off wasp location
+plot <- plotCounts(dds_group, "TRINITY_DN1684_c0_g1", intgroup = c("group"), main="TRINITY_DN1684_c0_g1", 
+                returnData=TRUE)
+legend_title <- expression(paste(italic("M. hyperodae"), " source location"))
+ggplot(plot, aes(x=group, y=count, color=sample_data$Wasp_Location)) + 
+  geom_point(position=position_jitter(w=0.1,h=0), size=2) + 
+  scale_y_log10(breaks=c(25,100,400)) +
+  labs(x="Treatment", y="Normalized Count") +
+  scale_color_manual(name=legend_title,
+                     labels=c("Lincoln", "Ruakura"),
+                     values=c("Lincoln"="steelblue1", "Ruakura"="tomato1"))
 
   ##read in annotated transcriptome
 trinotate_report <- fread("data/asw_transcriptome/trinotate_annotation_report.txt")

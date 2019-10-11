@@ -5,7 +5,6 @@ library("ggplot2")
 library("Biostrings")
 library("dplyr")
 library("VennDiagram")
-library("EnhancedVolcano")
 
 gene2tx <- fread("data/asw_transcriptome/Trinity.fasta.gene_trans_map", header = FALSE)
 tx2gene <- data.frame(gene2tx[, .(V2, V1)])
@@ -23,23 +22,29 @@ setkey(sample_data, Sample_name)
 
   ##Create dds object and link to sample data
 dds <- DESeqDataSetFromTximport(txi, colData = sample_data[colnames(txi$counts)], design = ~1)
+saveRDS(dds, file = "output/asw_timecourse/deseq2/dds.rds")
 
   ##Select only abdomen samples
 dds_abdo <- dds[,dds$Tissue == "Abdomen"]
   ##convert to factors
-time_order <- c("Control", "m30", "m120", "m240")
+time_order <- c("Control", "m30", "m120", "m240", 'm480')
 dds_abdo$Treatment <- factor(dds_abdo$Treatment, levels=time_order)
 dds_abdo$Wasp_Location <- factor(dds_abdo$Wasp_Location)
+dds_abdo$Flow_cell <- factor(dds_abdo$Flow_cell)
   ##add factors of ineterst to design
-design(dds_abdo) <- ~Wasp_Location+Treatment
+design(dds_abdo) <- ~Flow_cell+Wasp_Location+Treatment
   ##run deseq, must specify reduced model for LRT test
-dds_abdo <- DESeq(dds_abdo, test = "LRT", reduced = ~Wasp_Location)
-  ##filter results on alpha
+dds_abdo <- DESeq(dds_abdo, test = "LRT", reduced = ~Flow_cell+Wasp_Location)
+##save dds as a file for import in clustering timecourse genes script
+saveRDS(dds_abdo, file = "output/asw_timecourse/deseq2/dds_abdo.rds")
+
+dds_abdo <- readRDS("output/asw_timecourse/deseq2/dds_abdo.rds")
+##filter results on alpha
 dds_abdo_res <- results(dds_abdo, alpha = 0.1)
  ##order based off padj
 ordered_dds_abdo_res <- dds_abdo_res[order(dds_abdo_res$padj),]
-##save dds as a file for import in clustering timecourse genes script
-saveRDS(dds, file = "output/asw_timecourse/deseq2/dds.rds")
+df_all_res <- data.table(data.frame(ordered_dds_abdo_res), keep.rownames = TRUE)
+
   ##make list of sig genes
 sig_genes <- subset(dds_abdo_res, padj < 0.1)
   ##make list of sig gene names
@@ -51,15 +56,16 @@ fwrite(data.table(sig_gene_names), "output/asw_timecourse/deseq2/timecourse_sig_
 timecourse_all <- data.table(data.frame(dds_abdo_res), keep.rownames=TRUE)
 fwrite(timecourse_all, "output/asw_timecourse/deseq2/timecourse_all_genes.csv")
 
-##volcano plot
-EnhancedVolcano(ordered_dds_abdo_res, x="log2FoldChange", y="padj", lab="", transcriptPointSize = 3)
+saved_dds_abdo <- readRDS("output/asw_timecourse/deseq2/dds.rds")
 
 ##plot expression pattern for gene
-plot_gene <- plotCounts(dds_abdo, "TRINITY_DN14139_c0_g2", 
+plot_gene <- plotCounts(dds_abdo, "TRINITY_DN920_c0_g1", 
                         intgroup = c("Treatment"), returnData = TRUE)
 ggplot(plot_gene,
        aes(x = Treatment, y = count)) + 
-  geom_point() + geom_smooth(se = FALSE, method = "loess") + scale_y_log10()
+  geom_point() + geom_smooth(se = FALSE, method = "loess") + scale_y_log10() + xlab("Parasitism Timepoint") + ylab("Normalized Count")
+
+counts_table <- (data.table(counts(dds_abdo), keep.rownames = TRUE))
 
   ##Order results based of padj
 ordered_sig_degs <- sig_genes[order(sig_genes$padj),]
@@ -67,17 +73,27 @@ ordered_sig_degs <- sig_genes[order(sig_genes$padj),]
 ordered_degs_table <- data.table(data.frame(ordered_sig_degs), keep.rownames = TRUE)
 fwrite(ordered_degs_table, "output/asw_timecourse/deseq2/timecourse_analysis_sig_degs.csv")
 
-  ##compare to pre-filtering
-nf_sig_degs <- fread("nf_output/asw_timecourse/deseq2/timecourse_analysis_sig_degs.csv")
-nf_sig_ids <- nf_sig_degs$rn
+  ##compare to shorter-timecourse (no 8h)
+short_tc_degs <- fread("short_tc_output/asw_timecourse/deseq2/timecourse_analysis_sig_degs.csv")
+short_tc_ids <- short_tc_degs$rn
 f_sig_ids <- ordered_degs_table$rn
 Set1 <- RColorBrewer::brewer.pal(3, "Set1")
-vd <- venn.diagram(x = list("Non-Filtered DEGs"=nf_sig_ids, "Filtered DEGs"=f_sig_ids), filename=NULL, alpha=0.5, cex = 1, cat.cex=1, lwd=1, label=TRUE)
+vd <- venn.diagram(x = list("Short Time-course DEGs"=short_tc_ids, "Long Time-course"=f_sig_ids), filename=NULL, alpha=0.5, cex = 1, cat.cex=1, lwd=1, label=TRUE)
 grid.newpage()
 grid.draw(vd)
 
+short_tc_only <- data.table(setdiff(short_tc_degs$rn, ordered_degs_table$rn))
+short_tc_only_degs <- subset(short_tc_degs, (rn %in% short_tc_only$V1))
+annot_short_tc_only <- merge(short_tc_only_degs, dedup_sig_w_annots, by.x ="rn", by.y="#gene_id")
+fwrite(annot_short_tc_only, "output/asw_timecourse/deseq2/short_tc_only_degs.csv")
+
+long_tc_only <- data.table(setdiff(ordered_degs_table$rn, short_tc_degs$rn))
+long_tc_only_degs <- subset(ordered_degs_table, (rn %in% long_tc_only$V1))
+annot_long_tc_only <- merge(long_tc_only_degs, dedup_sig_w_annots, by.x ="rn", by.y="#gene_id")
+fwrite(annot_long_tc_only, "output/asw_timecourse/deseq2/long_tc_only_degs.csv")
+
   ##plot counts for genes of interest, sub in name
-plotCounts(dds_abdo, "TRINITY_DN13642_c0_g1", intgroup = c("Treatment", "Wasp_Location"))
+plotCounts(dds_abdo, "TRINITY_DN3601_c0_g1", intgroup = c("Treatment", "Flow_cell"))
 
   ##read in annotated transcriptome
 trinotate_report <- fread("data/asw_transcriptome/trinotate_annotation_report.txt")
@@ -86,6 +102,8 @@ setnames(ordered_degs_table, old=c("rn"), new=c("#gene_id"))
 sig_w_annots <- merge(ordered_degs_table, trinotate_report, by.x="#gene_id", by.y="#gene_id")
   ##save file - in excel edit duplicated gene ids (where one DEG had multiple annotations for each isoform)
 fwrite(sig_w_annots, "output/asw_timecourse/deseq2/sig_genes_with_annots.csv")
+
+##sort out DEGs that are new and DEGs that have been lost and take a look at annots
 
   ##read back in dedeup degs with annots
 dedup_sig_w_annots <- fread("output/asw_timecourse/deseq2/dedup_sig_genes_with_annots.csv")

@@ -11,7 +11,7 @@ gm_mean <- function(x, na.rm=TRUE){
 }
 
   ##read in dds saved in previous script
-dds <- readRDS("output/asw_timecourse/deseq2/dds.rds")
+dds <- readRDS("output/asw_timecourse/deseq2/dds_abdo.rds")
   ##filter for only abdo samples
 dds_abdo <- dds[,dds$Tissue == "Abdomen"]
   ##read in list of sig gene names
@@ -48,17 +48,23 @@ vg_s <- standardise(vg)
 #optimise parameters - mestimate(vg_s)?
 ##m determines influence of noise on cluster analysis - increasing m reduces the influence of genes with low membership values
 #m prevents clustering of random data
-##mestimate gave 2.97 - but don't want it this high???
-m <- 2.3
+##mestimate gave 2.97 for short tc - but don't want it this high???
+##gave 2.3 for longer tc, but this sig.reduces no. genes in clusters
+m <- 2
 #use to determine no. clusters - Dmin = mindist between clusters, should decline slower after reaching optimal no. of clusters
-x <- Dmin(vg_s, m, crange = seq(4, 16, 2), repeats = 1)
+x <- Dmin(vg_s, m, crange = seq(4, 16, 1), repeats = 1)
 diff(x)
 
 #c=no. clusters
+##4 missing real pattern, 6 has 2 clusters with same pattern, 7+ has clusters with only 1 gene
 c1 <- mfuzz(vg_s, c = 5, m=m)
 clusters<- acore(vg_s, c1, min.acore = 0.7)
 
-mfuzz.plot(vg_s, c1, mfrow = c(3, 2), min.mem = 0.7)
+##mfuzz cluster plot
+pdf("output/asw_timecourse/mfuzz/mfuzz_plot.pdf")
+##centre=TRUE, centre.col="black", centre.lwd=4 - puts a thick black line through middle of each cluster showing average pattern
+mfuzz.plot2(vg_s, c1, mfrow = c(3, 2), min.mem = 0.7, x11=FALSE, time.labels=c("Control", "30", "120", "240", "480"), xlab="Minutes")
+dev.off()
 
 cluster_membership <- rbindlist(clusters, idcol = "cluster")
 
@@ -74,23 +80,24 @@ cluster_pd <- merge(cluster_membership,
                     by = "NAME",
                     all.x = TRUE,
                     all.y = FALSE)
-
-time_order <- c("Control", "m30", "m120", "m240")
-cluster_pd[,time:=factor(time, levels = time_order)]
-
-gp <- ggplot(cluster_pd, aes(x = time,
-                             y = scaled_vst,
-                             colour = `MEM.SHIP`,
-                             group = NAME)) +
-  theme_minimal(base_size = 8) +
-  xlab(NULL) + ylab("Scaled, mapped reads") +
-  facet_wrap(~ cluster) +
-  geom_line()
-
-ggsave("output/asw_timecourse/mfuzz/clusters.pdf", gp)
 fwrite(cluster_pd, "output/asw_timecourse/mfuzz/gene_clusters.csv")
 
 ##Can do from here on laptop - can play with and change m and cluster #
+cluster_pd <- fread("output/asw_timecourse/mfuzz/gene_clusters.csv")
+##prep table for plotting
+time_order <- c("Control", "m30", "m120", "m240", "m480")
+cluster_pd[,time:=factor(time, levels = time_order)]
+setnames(cluster_pd, old=c("MEM.SHIP"), new=c("Cluster Membership"))
+
+####ideally the x axis would be spread out across time rather than discrete#####
+ggplot(cluster_pd, aes(x = time,
+                       y = scaled_vst,
+                       colour = `Cluster Membership`,
+                       group = NAME)) +
+  theme_minimal(base_size = 8) +
+  xlab("Minutes") + ylab("Scaled, mapped reads") +
+  facet_wrap(~ cluster_label, scales="fixed") +
+  geom_line()
 
 ##add trinotate annot.s to all DEGs in other script then pull out clustered genes here
 
