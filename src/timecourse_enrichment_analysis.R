@@ -3,7 +3,7 @@ library('fgsea')
 library('ggplot2')
 library('VennDiagram')
 
-trinotate_report <- fread("data/asw_transcriptome/trinotate_annotation_report.txt", na.strings = ".")
+trinotate_report <- fread("data/asw_mh_transcriptome/asw_trinotate_annotation_report.txt", na.strings = ".")
 gene_ids <- trinotate_report[!is.na(gene_ontology_pfam), unique(`#gene_id`)]
 res_timecourse <- fread("output/asw_timecourse/deseq2/timecourse_all_genes.csv")
 

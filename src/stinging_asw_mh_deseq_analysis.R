@@ -6,7 +6,7 @@ library("Biostrings")
 library("dplyr")
 library("VennDiagram")
 
-gene2tx <- fread("data/asw_mh_transcriptome/asw_mh_Trinity.fasta.gene_trans_map", header = FALSE)
+gene2tx <- fread("data/asw_mh_transcriptome/asw_Trinity.fasta.gene_trans_map", header = FALSE)
 tx2gene <- data.frame(gene2tx[, .(V2, V1)])
 
 ##Find all salmon quant files
@@ -39,7 +39,7 @@ dds_abdo_res <- results(dds_abdo, alpha = 0.1)
 ##order based off padj
 ordered_dds_abdo_res <- dds_abdo_res[order(dds_abdo_res$padj),]
 ##save dds as a file for import in clustering timecourse genes script
-saveRDS(dds, file = "output/asw_timecourse/deseq2/dds.rds")
+saveRDS(dds, file = "output/asw_mh_timecourse/deseq2/asw_dds.rds")
 ##make list of sig genes
 sig_genes <- subset(dds_abdo_res, padj < 0.1)
 ##make list of sig gene names
@@ -56,6 +56,30 @@ ordered_sig_degs <- sig_genes[order(sig_genes$padj),]
 ##make datatable and write to output
 ordered_degs_table <- data.table(data.frame(ordered_sig_degs), keep.rownames = TRUE)
 fwrite(ordered_degs_table, "output/asw_mh_timecourse/deseq2/timecourse_analysis_sig_degs.csv")
+
+long_tc_sig <- fread("output/asw_timecourse/deseq2/timecourse_analysis_sig_degs.csv")
+long_tc_ids <- long_tc_sig$rn
+##compare asw+mh at once to long tc
+asw_sig_degs <- dplyr::filter(ordered_degs_table, grepl('ASW_TRINITY', `#gene_id`))
+asw_sig_ids <- data.table(asw_sig_degs$`#gene_id`)
+asw_sig_ids$V1 <- tstrsplit(asw_sig_ids$V1, "ASW_", keep=c(2))
+plot_asw_sig_ids <- asw_sig_ids$V1
+
+Set1 <- RColorBrewer::brewer.pal(3, "Set1")
+vd <- venn.diagram(x = list("Long Time-course DEGs"=long_tc_ids, "ASW DEGs (ASW-MH concat)"=plot_asw_sig_ids), filename=NULL, alpha=0.5, cex = 1, cat.cex=1, lwd=1, label=TRUE)
+grid.newpage()
+grid.draw(vd)
+
+##compare asw-only from asw_mh concat to long tc
+asw_sig_degs <- data.table(ordered_degs_table$rn)
+asw_sig_degs$V1 <- tstrsplit(asw_sig_degs$V1, "ASW_", keep=c(2))
+asw_sig_ids <- asw_sig_degs$V1
+
+Set1 <- RColorBrewer::brewer.pal(3, "Set1")
+vd <- venn.diagram(x = list("Long Time-course DEGs"=long_tc_ids, "ASW DEGs (ASW-MH concat,
+                            ASW-only deseq)"=asw_sig_ids), filename=NULL, alpha=0.5, cex = 1, cat.cex=1, lwd=1, label=TRUE)
+grid.newpage()
+grid.draw(vd)
 
 ##read in annotated transcriptome
 trinotate_report <- fread("data/asw_mh_transcriptome/asw_mh_trinotate_annotation_report.txt")

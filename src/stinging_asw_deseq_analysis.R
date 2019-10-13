@@ -6,11 +6,12 @@ library("Biostrings")
 library("dplyr")
 library("VennDiagram")
 
+##ASW gene to trans map (edited to have ID's match concat transcriptome - ASW_TRINITY)
 gene2tx <- fread("data/asw_transcriptome/Trinity.fasta.gene_trans_map", header = FALSE)
 tx2gene <- data.frame(gene2tx[, .(V2, V1)])
 
-  ##Find all salmon quant files
-quant_files <- list.files(path="output/asw_salmon", pattern = "quant.sf", full.names=TRUE, recursive = TRUE)
+  ##Find all salmon quant files - quantified against concat ASW-MH transcriptome
+quant_files <- list.files(path="output/asw_mh_concat_salmon", pattern = "quant.sf", full.names=TRUE, recursive = TRUE)
   ##assign names to quant files from folder name
 names(quant_files) <- gsub(".*/(.+)_quant/.*", "\\1", quant_files)
   ##import the salmon quant files (tx2gene links transcript ID to Gene ID - required for gene-level summarisation... 
@@ -54,46 +55,27 @@ fwrite(data.table(sig_gene_names), "output/asw_timecourse/deseq2/timecourse_sig_
 
 ##write list of results for all genes for FGSEA analysis
 timecourse_all <- data.table(data.frame(dds_abdo_res), keep.rownames=TRUE)
+timecourse_all$fixed_id <- tstrsplit(timecourse_all$rn, "ASW_", keep=c(2))
 fwrite(timecourse_all, "output/asw_timecourse/deseq2/timecourse_all_genes.csv")
 
-saved_dds_abdo <- readRDS("output/asw_timecourse/deseq2/dds.rds")
+##Order results based of padj
+ordered_sig_degs <- sig_genes[order(sig_genes$padj),]
+##make datatable and write to output
+ordered_degs_table <- data.table(data.frame(ordered_sig_degs), keep.rownames = TRUE)
+ordered_degs_table$fixed_ids <- tstrsplit(ordered_degs_table$rn, "ASW_", keep=c(2))
+fwrite(ordered_degs_table, "output/asw_timecourse/deseq2/timecourse_analysis_sig_degs.csv")
 
 ##plot expression pattern for gene
-plot_gene <- plotCounts(dds_abdo, "TRINITY_DN920_c0_g1", 
+plot_gene <- plotCounts(dds_abdo, "ASW_TRINITY_DN920_c0_g1", 
                         intgroup = c("Treatment"), returnData = TRUE)
 ggplot(plot_gene,
        aes(x = Treatment, y = count)) + 
   geom_point() + geom_smooth(se = FALSE, method = "loess") + scale_y_log10() + xlab("Parasitism Timepoint") + ylab("Normalized Count")
-
-counts_table <- (data.table(counts(dds_abdo), keep.rownames = TRUE))
-
-  ##Order results based of padj
-ordered_sig_degs <- sig_genes[order(sig_genes$padj),]
-  ##make datatable and write to output
-ordered_degs_table <- data.table(data.frame(ordered_sig_degs), keep.rownames = TRUE)
-fwrite(ordered_degs_table, "output/asw_timecourse/deseq2/timecourse_analysis_sig_degs.csv")
-
-  ##compare to shorter-timecourse (no 8h)
-short_tc_degs <- fread("short_tc_output/asw_timecourse/deseq2/timecourse_analysis_sig_degs.csv")
-short_tc_ids <- short_tc_degs$rn
-f_sig_ids <- ordered_degs_table$rn
-Set1 <- RColorBrewer::brewer.pal(3, "Set1")
-vd <- venn.diagram(x = list("Short Time-course DEGs"=short_tc_ids, "Long Time-course"=f_sig_ids), filename=NULL, alpha=0.5, cex = 1, cat.cex=1, lwd=1, label=TRUE)
-grid.newpage()
-grid.draw(vd)
-
-short_tc_only <- data.table(setdiff(short_tc_degs$rn, ordered_degs_table$rn))
-short_tc_only_degs <- subset(short_tc_degs, (rn %in% short_tc_only$V1))
-annot_short_tc_only <- merge(short_tc_only_degs, dedup_sig_w_annots, by.x ="rn", by.y="#gene_id")
-fwrite(annot_short_tc_only, "output/asw_timecourse/deseq2/short_tc_only_degs.csv")
-
-long_tc_only <- data.table(setdiff(ordered_degs_table$rn, short_tc_degs$rn))
-long_tc_only_degs <- subset(ordered_degs_table, (rn %in% long_tc_only$V1))
-annot_long_tc_only <- merge(long_tc_only_degs, dedup_sig_w_annots, by.x ="rn", by.y="#gene_id")
-fwrite(annot_long_tc_only, "output/asw_timecourse/deseq2/long_tc_only_degs.csv")
-
-  ##plot counts for genes of interest, sub in name
+##plot counts for genes of interest, sub in name
 plotCounts(dds_abdo, "TRINITY_DN3601_c0_g1", intgroup = c("Treatment", "Flow_cell"))
+
+##make table to view counts for each gene
+counts_table <- (data.table(counts(dds_abdo), keep.rownames = TRUE))
 
   ##read in annotated transcriptome
 trinotate_report <- fread("data/asw_transcriptome/trinotate_annotation_report.txt")
@@ -144,3 +126,21 @@ noannot_ids <- data.table(no_annot$transcript_id)
 ids_for_interproscan <- merge(unchar_hypo_ids, noannot_ids, all = TRUE)
 fwrite(ids_for_interproscan, "output/asw_timecourse/interproscan/interproscan_ids.txt")
 
+##compare to shorter-timecourse (no 8h)
+short_tc_degs <- fread("short_tc_output/asw_timecourse/deseq2/timecourse_analysis_sig_degs.csv")
+short_tc_ids <- short_tc_degs$rn
+long_sig_id_list <- ordered_degs_table$fixed_ids
+Set1 <- RColorBrewer::brewer.pal(3, "Set1")
+vd <- venn.diagram(x = list("Short Time-course DEGs"=short_tc_ids, "Long Time-course"=long_sig_id_list), filename=NULL, alpha=0.5, cex = 1, cat.cex=1, lwd=1, label=TRUE)
+grid.newpage()
+grid.draw(vd)
+
+short_tc_only <- data.table(setdiff(short_tc_degs$rn, ordered_degs_table$rn))
+short_tc_only_degs <- subset(short_tc_degs, (rn %in% short_tc_only$V1))
+annot_short_tc_only <- merge(short_tc_only_degs, dedup_sig_w_annots, by.x ="rn", by.y="#gene_id")
+fwrite(annot_short_tc_only, "output/asw_timecourse/deseq2/short_tc_only_degs.csv")
+
+long_tc_only <- data.table(setdiff(ordered_degs_table$rn, short_tc_degs$rn))
+long_tc_only_degs <- subset(ordered_degs_table, (rn %in% long_tc_only$V1))
+annot_long_tc_only <- merge(long_tc_only_degs, dedup_sig_w_annots, by.x ="rn", by.y="#gene_id")
+fwrite(annot_long_tc_only, "output/asw_timecourse/deseq2/long_tc_only_degs.csv")

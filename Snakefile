@@ -77,9 +77,36 @@ all_samples = sorted(set(sample_key['Sample_name']))
 rule target:
     input:
      expand('output/asw_salmon/{sample}_quant/quant.sf', sample = all_samples),
-     expand('output/asw_mh_concat_salmon/{sample}_quant/quant.sf', sample = all_samples)
+     expand('output/asw_mh_concat_salmon/{sample}_quant/quant.sf', sample = all_samples),
+     expand('output/asw_nf_salmon/{sample}_quant/quant.sf', sample = all_samples)
 
-rule asw__mh_concat_salmon_quant:
+rule asw_nf_salmon_quant:
+    input:
+        index_output = 'output/asw_salmon/transcripts_index/hash.bin',
+        left = 'output/bbduk_trim/{sample}_r1.fq.gz',
+        right = 'output/bbduk_trim/{sample}_r2.fq.gz'
+    output:
+        quant = 'output/asw_nf_salmon/{sample}_quant/quant.sf'
+    params:
+        index_outdir = 'output/asw_salmon/transcripts_index',
+        outdir = 'output/asw_nf_salmon/{sample}_quant'
+    threads:
+        20
+    singularity:
+        salmon_container
+    log:
+        'output/logs/salmon/asw_nft_salmon_quant_{sample}.log'
+    shell:
+        'salmon quant '
+        '-i {params.index_outdir} '
+        '-l ISR '
+        '-1 {input.left} '
+        '-2 {input.right} '
+        '-o {params.outdir} '
+        '-p {threads} '
+        '&> {log}'
+
+rule asw_mh_concat_salmon_quant:
     input:
         index_output = 'output/asw_mh_concat_salmon/transcripts_index/hash.bin',
         left = 'output/bbduk_trim/{sample}_r1.fq.gz',
