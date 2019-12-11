@@ -25,6 +25,18 @@ setkey(sample_data, Sample_name)
 dds <- DESeqDataSetFromTximport(txi, colData = sample_data[colnames(txi$counts)], design = ~1)
 saveRDS(dds, file = "output/asw_timecourse/deseq2/dds.rds")
 
+##read in dds to save rerunning
+dds <- readRDS("output/asw_timecourse/deseq2/dds.rds")
+
+##remove 8h NC2&3 - find sample number in table
+colData(dds)
+##remove 8hNC2 - 4th in table
+dds <- dds[,-4]
+##remove 8hNC3 - sample 5 once 8hNC2 removed
+dds <- dds[,-5]
+##check correct samples were removed
+colData(dds)
+
   ##Select only abdomen samples
 dds_abdo <- dds[,dds$Tissue == "Abdomen"]
   ##convert to factors
@@ -72,7 +84,7 @@ ggplot(plot_gene,
        aes(x = Treatment, y = count)) + 
   geom_point() + geom_smooth(se = FALSE, method = "loess") + scale_y_log10() + xlab("Parasitism Timepoint") + ylab("Normalized Count")
 ##plot counts for genes of interest, sub in name
-plotCounts(dds_abdo, "TRINITY_DN3601_c0_g1", intgroup = c("Treatment", "Flow_cell"))
+plotCounts(dds_abdo, "ASW_TRINITY_DN9264_c0_g1", intgroup = c("Treatment", "Flow_cell"))
 
 ##make table to view counts for each gene
 counts_table <- (data.table(counts(dds_abdo), keep.rownames = TRUE))
@@ -96,9 +108,9 @@ no_blastx_annot_degs <- dedup_sig_w_annots[dedup_sig_w_annots$sprot_Top_BLASTX_h
   ##list of DEGs with no blastX OR blastP
 no_blast_annot_degs <- no_blastx_annot_degs[no_blastx_annot_degs$sprot_Top_BLASTP_hit == ".",]
   ##make list of degs with no blast annot.
-list_degs_no_annot <- data.table(no_blast_annot_degs$transcript_id)
+list_degs_no_annot <- data.table(no_blast_annot_degs$`#gene_id`)
   ##write list of degs with no annot.
-fwrite(list_degs_no_annot, "output/asw_timecourse/deseq2/degs_with_no_annot.txt")
+fwrite(list_degs_no_annot, "output/asw_timecourse/deseq2/no_annot/degs_with_no_annot.txt")
 
   ##read in blast results?
 timecourse_no_annot_blast <- fread("output/asw_timecourse/no_annot/blastx_titles.outfmt6")
@@ -127,11 +139,12 @@ ids_for_interproscan <- merge(unchar_hypo_ids, noannot_ids, all = TRUE)
 fwrite(ids_for_interproscan, "output/asw_timecourse/interproscan/interproscan_ids.txt")
 
 ##compare to shorter-timecourse (no 8h)
-short_tc_degs <- fread("short_tc_output/asw_timecourse/deseq2/timecourse_analysis_sig_degs.csv")
-short_tc_ids <- short_tc_degs$rn
+short_tc_degs <- fread("output/asw_timecourse_all_NC/deseq2/timecourse_analysis_sig_degs.csv")
+short_tc_degs$fixed_ids <- tstrsplit(short_tc_degs$rn, "ASW_", keep=c(2))
+short_tc_ids <- short_tc_degs$fixed_ids
 long_sig_id_list <- ordered_degs_table$fixed_ids
 Set1 <- RColorBrewer::brewer.pal(3, "Set1")
-vd <- venn.diagram(x = list("Short Time-course DEGs"=short_tc_ids, "Long Time-course"=long_sig_id_list), filename=NULL, alpha=0.5, cex = 1, cat.cex=1, lwd=1, label=TRUE)
+vd <- venn.diagram(x = list("Long TC, all NCs"=short_tc_ids, "Long TC -8hNC2&3"=long_sig_id_list), filename=NULL, alpha=0.5, cex = 1, cat.cex=1, lwd=1, label=TRUE)
 grid.newpage()
 grid.draw(vd)
 

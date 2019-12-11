@@ -77,6 +77,45 @@ all_samples = sorted(set(sample_key['Sample_name']))
 rule target:
     input:
      expand('output/asw_mh_concat_salmon/{sample}_quant/quant.sf', sample = all_samples),
+     #'output/asw_timecourse/no_annot/blastx.outfmt6',
+     'output/fastqc'
+
+rule blast_unann_degs:
+    input:
+        unann_degs = 'output/asw_timecourse/no_annot/degs_no_annot.fasta'
+    output:
+        blastx_res = 'output/asw_timecourse/no_annot/blastx.outfmt6'
+    params:
+        db = 'bin/db/blastdb/nr/nr'
+    threads:
+        40
+    log:
+        'output/logs/blast_unann_degs.log'
+    shell:
+        'blastx '
+        '-query {input.unann_degs} '
+        '-db {params.db} '
+        '-num_threads {threads} '
+        '-outfmt "6 std salltitles" > {output.blastx_res} '
+
+rule filter_degs_no_annot:
+    input:
+        deg_ids = 'output/asw_timecourse/deseq2/no_annot/degs_with_no_annot.txt',
+        transcriptome_length_filtered = 'data/asw_transcriptome/isoforms_by_length.fasta'
+    output:
+        unann_degs = 'output/asw_timecourse/no_annot/degs_no_annot.fasta'
+    singularity:
+        bbduk_container
+    log:
+        'output/logs/filter_degs_no_annot.log'
+    shell:
+        'filterbyname.sh '
+        'in={input.transcriptome_length_filtered} '
+        'include=t '
+        'substring=t '
+        'names={input.deg_ids} '
+        'out={output.unann_degs} '
+        '2> {log}'
 
 rule asw_mh_concat_salmon_quant:
     input:
@@ -124,6 +163,16 @@ rule asw_mh_concat_salmon_index:
         '-i {params.outdir} '
         '-p {threads} '
         '&> {log}'
+
+rule fastqc:
+    input:
+        expand('output/bbduk_trim/{sample}_r{n}.fq.gz',
+            sample=all_samples, n=[1,2])
+    output:
+        directory('output/fastqc')
+    shell:
+        'mkdir -p {output} ; '
+        'fastqc --outdir {output} {input}'
 
 rule bbduk_trim:
     input:

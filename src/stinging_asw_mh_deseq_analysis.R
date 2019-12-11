@@ -6,7 +6,7 @@ library("Biostrings")
 library("dplyr")
 library("VennDiagram")
 
-gene2tx <- fread("data/asw_mh_transcriptome/asw_Trinity.fasta.gene_trans_map", header = FALSE)
+gene2tx <- fread("data/asw_edited_transcript_ids/Trinity.fasta.gene_trans_map", header = FALSE)
 tx2gene <- data.frame(gene2tx[, .(V2, V1)])
 
 ##Find all salmon quant files
@@ -23,6 +23,17 @@ setkey(sample_data, Sample_name)
 ##Create dds object and link to sample data
 dds <- DESeqDataSetFromTximport(txi, colData = sample_data[colnames(txi$counts)], design = ~1)
 
+##remove samples that aren't what they should be
+coldata <- data.frame(colData(dds))
+dds <- dds[,-c(1,4,6,7,8,9,11,18)]
+coldata_samples_removed <- data.frame(colData(dds))
+
+##read in dds to save rerunning
+counts_matrix <- data.frame(counts(dds))
+counts_colSums <- data.frame(colSums(counts_matrix, na.rm=TRUE))
+fwrite(counts_colSums, "output/asw_timecourse/deseq2/counts_colsums.csv", row.names = TRUE)
+
+##start analysing
 ##Select only abdomen samples
 dds_abdo <- dds[,dds$Tissue == "Abdomen"]
 ##convert to factors
@@ -82,9 +93,11 @@ grid.newpage()
 grid.draw(vd)
 
 ##read in annotated transcriptome
-trinotate_report <- fread("data/asw_mh_transcriptome/asw_mh_trinotate_annotation_report.txt")
+trinotate_report <- fread("data/asw_edited_transcript_ids/trinotate_annotation_report.txt")
 setnames(ordered_degs_table, old=c("rn"), new=c("#gene_id"))
 ##merge list of sig genes with annotations
 sig_w_annots <- merge(ordered_degs_table, trinotate_report, by.x="#gene_id", by.y="#gene_id")
 ##save file - in excel edit duplicated gene ids (where one DEG had multiple annotations for each isoform)
 fwrite(sig_w_annots, "output/asw_mh_timecourse/deseq2/sig_genes_with_annots.csv")
+
+

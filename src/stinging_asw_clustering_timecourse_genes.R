@@ -88,6 +88,7 @@ cluster_pd <- fread("output/asw_timecourse/mfuzz/gene_clusters.csv")
 time_order <- c("Control", "m30", "m120", "m240", "m480")
 cluster_pd[,time:=factor(time, levels = time_order)]
 setnames(cluster_pd, old=c("MEM.SHIP"), new=c("Cluster Membership"))
+cluster_pd$cluster_label <- paste("Cluster", cluster_pd$cluster)
 
 ####ideally the x axis would be spread out across time rather than discrete#####
 ggplot(cluster_pd, aes(x = time,
