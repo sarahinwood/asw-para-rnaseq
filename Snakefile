@@ -76,9 +76,57 @@ all_samples = sorted(set(sample_key['Sample_name']))
 
 rule target:
     input:
-     expand('output/asw_mh_concat_salmon/{sample}_quant/quant.sf', sample = all_samples),
+     #expand('output/asw_mh_concat_salmon/{sample}_quant/quant.sf', sample = all_samples),
      #'output/asw_timecourse/no_annot/blastx.outfmt6',
-     'output/fastqc'
+     #'output/fastqc',
+     expand('output/L2_30m_salmon/{sample}_quant/quant.sf', sample=all_samples)
+
+rule asw_salmon_quant_L2_30m_transcriptome:
+    input:
+        index_output = 'output/L2_30m_salmon/transcripts_index/hash.bin',
+        left = 'output/bbduk_trim/{sample}_r1.fq.gz',
+        right = 'output/bbduk_trim/{sample}_r2.fq.gz'
+    output:
+        quant = 'output/L2_30m_salmon/{sample}_quant/quant.sf'
+    params:
+        index_outdir = 'output/L2_30m_salmon/transcripts_index',
+        outdir = 'output/L2_30m_salmon/{sample}_quant'
+    threads:
+        20
+    singularity:
+        salmon_container
+    log:
+        'output/logs/L2_30m_salmon/L2_30m_transcriptome_salmon_{sample}.log'
+    shell:
+        'salmon quant '
+        '-i {params.index_outdir} '
+        '-l ISR '
+        '-1 {input.left} '
+        '-2 {input.right} '
+        '-o {params.outdir} '
+        '--writeUnmappedNames '
+        '-p {threads} '
+        '&> {log}'
+
+rule asw_salmon_index_L2_30m_transcriptome:
+    input:
+        transcriptome_length_filtered = 'exposed_data/ASW_isoforms_by_length.fasta'
+    output:
+        'output/L2_30m_salmon/transcripts_index/hash.bin'
+    params:
+        outdir = 'output/L2_30m_salmon/transcripts_index'
+    threads:
+        20
+    singularity:
+        salmon_container
+    log:
+        'output/logs/L2_30m_salmon/L2_30m_salmon_index.log'
+    shell:
+        'salmon index '
+        '-t {input.transcriptome_length_filtered} '
+        '-i {params.outdir} '
+        '-p {threads} '
+        '&> {log}'
 
 rule blast_unann_degs:
     input:

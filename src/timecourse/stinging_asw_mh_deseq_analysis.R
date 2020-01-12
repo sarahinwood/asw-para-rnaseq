@@ -31,7 +31,7 @@ coldata_samples_removed <- data.frame(colData(dds))
 ##read in dds to save rerunning
 counts_matrix <- data.frame(counts(dds))
 counts_colSums <- data.frame(colSums(counts_matrix, na.rm=TRUE))
-fwrite(counts_colSums, "output/asw_timecourse/deseq2/counts_colsums.csv", row.names = TRUE)
+fwrite(counts_colSums, "output/asw_mh_timecourse/deseq2/counts_colsums.csv", row.names = TRUE)
 
 ##start analysing
 ##Select only abdomen samples
@@ -50,7 +50,7 @@ dds_abdo_res <- results(dds_abdo, alpha = 0.1)
 ##order based off padj
 ordered_dds_abdo_res <- dds_abdo_res[order(dds_abdo_res$padj),]
 ##save dds as a file for import in clustering timecourse genes script
-saveRDS(dds, file = "output/asw_mh_timecourse/deseq2/asw_dds.rds")
+saveRDS(dds_abdo, file = "output/asw_mh_timecourse/deseq2/dds_abdo_samples_excluded.rds")
 ##make list of sig genes
 sig_genes <- subset(dds_abdo_res, padj < 0.1)
 ##make list of sig gene names
@@ -66,6 +66,7 @@ fwrite(timecourse_all, "output/asw_mh_timecourse/deseq2/timecourse_all_genes.csv
 ordered_sig_degs <- sig_genes[order(sig_genes$padj),]
 ##make datatable and write to output
 ordered_degs_table <- data.table(data.frame(ordered_sig_degs), keep.rownames = TRUE)
+ordered_degs_table$`#gene_id` <- tstrsplit(ordered_degs_table$`#gene_id`, "ASW_", keep=c(2))
 fwrite(ordered_degs_table, "output/asw_mh_timecourse/deseq2/timecourse_analysis_sig_degs.csv")
 
 long_tc_sig <- fread("output/asw_timecourse/deseq2/timecourse_analysis_sig_degs.csv")
@@ -93,11 +94,13 @@ grid.newpage()
 grid.draw(vd)
 
 ##read in annotated transcriptome
-trinotate_report <- fread("data/asw_edited_transcript_ids/trinotate_annotation_report.txt")
+trinotate_report <- fread("data/asw_most_sig_transcript_blastx_hit_for_each_gene.csv")
 setnames(ordered_degs_table, old=c("rn"), new=c("#gene_id"))
 ##merge list of sig genes with annotations
-sig_w_annots <- merge(ordered_degs_table, trinotate_report, by.x="#gene_id", by.y="#gene_id")
+sig_w_annots <- merge(ordered_degs_table, trinotate_report, by.x="#gene_id", by.y="#gene_id", all.x=TRUE)
 ##save file - in excel edit duplicated gene ids (where one DEG had multiple annotations for each isoform)
 fwrite(sig_w_annots, "output/asw_mh_timecourse/deseq2/sig_genes_with_annots.csv")
+
+plotCounts(dds_abdo, "ASW_TRINITY_DN1684_c0_g1", intgroup = c("Treatment"))
 
 
